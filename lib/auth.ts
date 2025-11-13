@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import mongoose from 'mongoose';
 import dbConnect from './db';
 import User from '@/models/User';
 
@@ -30,7 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         return {
-          id: user._id.toString(),
+          id: (user._id as mongoose.Types.ObjectId).toString(),
           email: user.email,
           name: user.name,
           role: user.role,

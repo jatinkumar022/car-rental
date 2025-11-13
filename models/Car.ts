@@ -1,9 +1,9 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export interface ICar extends Document {
+export interface ICar extends Omit<Document, 'model'> {
   owner: mongoose.Types.ObjectId;
   make: string;
-  model: string;
+  model: string; // Car model name (e.g., "Camry")
   year: number;
   type: string;
   transmission: 'automatic' | 'manual';

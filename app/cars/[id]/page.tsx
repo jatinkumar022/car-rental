@@ -5,14 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import {
-  Calendar,
   MapPin,
   Users,
   Fuel,
   Settings,
   Star,
-  DollarSign,
-  User,
   Phone,
   Mail,
 } from 'lucide-react';
@@ -32,9 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import BookingCard from '@/components/BookingCard';
 import { format } from 'date-fns';
-import { motion } from 'framer-motion';
 
 interface Car {
   _id: string;
@@ -80,7 +75,7 @@ export default function CarDetailPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const [, setReviewOpen] = useState(false);
   const [bookingData, setBookingData] = useState({
     startDate: '',
     endDate: '',
@@ -146,7 +141,7 @@ export default function CarDetailPage() {
       } else {
         alert(data.error || 'Failed to create booking');
       }
-    } catch (error) {
+    } catch {
       alert('Error creating booking');
     }
   };
@@ -159,7 +154,7 @@ export default function CarDetailPage() {
       const bookingsRes = await fetch('/api/bookings?role=renter');
       const bookingsData = await bookingsRes.json();
       const booking = bookingsData.bookings?.find(
-        (b: any) =>
+        (b: { car: { _id: string }; status: string; reviewed?: boolean }) =>
           b.car._id === params.id && b.status === 'completed' && !b.reviewed
       );
 
@@ -186,7 +181,7 @@ export default function CarDetailPage() {
       } else {
         alert(data.error || 'Failed to submit review');
       }
-    } catch (error) {
+    } catch {
       alert('Error submitting review');
     }
   };

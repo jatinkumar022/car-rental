@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint . --ext .ts,.tsx --config eslint.config.mjs",
+    "lint:fix": "eslint . --ext .ts,.tsx --config eslint.config.mjs --fix",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "check": "npm run typecheck && npm run lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

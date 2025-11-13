@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Car, Calendar, Star, DollarSign } from 'lucide-react';
+import { Plus, Car, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -28,7 +28,7 @@ import {
 import BookingCard from '@/components/BookingCard';
 import CarCard from '@/components/CarCard';
 import Image from 'next/image';
-import Loader, { CardSkeleton } from '@/components/Loader';
+import Loader from '@/components/Loader';
 import { validateRequired, validateYear, validatePrice, validateNumber } from '@/lib/validation';
 
 interface Car {
@@ -150,7 +150,7 @@ export default function DashboardPage() {
       } else {
         alert(data.error || 'Upload failed');
       }
-    } catch (error) {
+    } catch {
       alert('Error uploading image');
     } finally {
       setUploading(false);
@@ -215,7 +215,7 @@ export default function DashboardPage() {
       } else {
         alert(data.error || 'Failed to add car');
       }
-    } catch (error) {
+    } catch {
       alert('Error adding car');
     }
   };
@@ -233,7 +233,7 @@ export default function DashboardPage() {
       } else {
         alert('Failed to update booking');
       }
-    } catch (error) {
+    } catch {
       alert('Error updating booking');
     }
   };

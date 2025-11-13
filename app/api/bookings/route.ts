@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role') || 'renter';
 
-    let query: any = {};
+    const query: Record<string, unknown> = {};
     if (role === 'renter') {
       query.renter = session.user.id;
     } else {
