@@ -30,9 +30,10 @@ export async function GET(request: NextRequest) {
       .sort({ createdAt: -1 });
 
     return NextResponse.json({ bookings }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -114,9 +115,10 @@ export async function POST(request: NextRequest) {
       .populate('renter', 'name email avatar');
 
     return NextResponse.json({ booking: populatedBooking }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

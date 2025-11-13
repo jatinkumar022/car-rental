@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Car from '@/models/Car';
 import { auth } from '@/lib/auth';
+import { CarQuery } from '@/types/mongodb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location') || '';
     const ownerId = searchParams.get('ownerId') || '';
 
-    const query: any = { available: true };
+    const query: CarQuery = { available: true };
 
     if (ownerId) {
       query.owner = ownerId;
@@ -37,12 +38,13 @@ export async function GET(request: NextRequest) {
     if (transmission) query.transmission = transmission;
     if (fuelType) query.fuelType = fuelType;
     if (location) query.location = { $regex: location, $options: 'i' };
-    if (minPrice) query.pricePerDay = { ...query.pricePerDay, $gte: parseFloat(minPrice) };
-    if (maxPrice) {
-      query.pricePerDay = {
-        ...query.pricePerDay,
-        $lte: parseFloat(maxPrice),
-      };
+    
+    // Handle price range
+    if (minPrice || maxPrice) {
+      const priceQuery: { $gte?: number; $lte?: number } = {};
+      if (minPrice) priceQuery.$gte = parseFloat(minPrice);
+      if (maxPrice) priceQuery.$lte = parseFloat(maxPrice);
+      query.pricePerDay = priceQuery;
     }
 
     const skip = (page - 1) * limit;
@@ -66,9 +68,10 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -90,9 +93,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ car }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

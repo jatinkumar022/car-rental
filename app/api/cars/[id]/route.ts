@@ -17,9 +17,10 @@ export async function GET(
     }
 
     return NextResponse.json({ car }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -54,9 +55,10 @@ export async function PUT(
     });
 
     return NextResponse.json({ car: updatedCar }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -87,9 +89,10 @@ export async function DELETE(
     await Car.findByIdAndDelete(id);
 
     return NextResponse.json({ message: 'Car deleted successfully' }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

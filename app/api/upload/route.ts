@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { auth } from '@/lib/auth';
+import { CloudinaryUploadResult } from '@/types/cloudinary';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadResult = await new Promise((resolve, reject) => {
+    const uploadResult = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
           {
@@ -34,7 +35,19 @@ export async function POST(request: NextRequest) {
           },
           (error, result) => {
             if (error) reject(error);
-            else resolve(result);
+            else if (result) {
+              resolve({
+                secure_url: result.secure_url,
+                public_id: result.public_id,
+                url: result.url,
+                width: result.width,
+                height: result.height,
+                format: result.format,
+                resource_type: result.resource_type,
+              });
+            } else {
+              reject(new Error('Upload failed: No result returned'));
+            }
           }
         )
         .end(buffer);
@@ -42,14 +55,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        url: (uploadResult as any).secure_url,
-        publicId: (uploadResult as any).public_id,
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
     return NextResponse.json(
-      { error: error.message || 'Upload failed' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
