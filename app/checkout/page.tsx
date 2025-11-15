@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Calendar, MapPin, Car, ArrowLeft, CreditCard } from 'lucide-react';
+import { Calendar, MapPin, Car, ArrowLeft, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,7 @@ interface CheckoutCar {
   };
 }
 
-export default function CheckoutPage() {
+function CheckoutForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { status } = useSession();
@@ -370,6 +370,24 @@ export default function CheckoutPage() {
         onSuccess={handlePaymentSuccess}
       />
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
+        <Card className="w-full max-w-md shadow-[0_4px_16px_rgba(0,0,0,0.12)] border-0">
+          <CardContent className="py-12">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-[#00D09C]" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <CheckoutForm />
+    </Suspense>
   );
 }
 
