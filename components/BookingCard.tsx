@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Calendar, DollarSign, User } from 'lucide-react';
+import { Calendar, IndianRupee, User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -85,9 +85,9 @@ export default function BookingCard({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <IndianRupee className="h-4 w-4" />
               <span>
-                ${booking.totalPrice} ({booking.totalDays} days)
+                ₹{booking.totalPrice} ({booking.totalDays} days)
               </span>
             </div>
           </div>

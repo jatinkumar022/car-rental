@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // This is a placeholder for Stripe integration
-    // In production, you would integrate with Stripe here
+    // This is a placeholder for Razorpay integration
+    // In production, you would integrate with Razorpay here
     const payment = await Payment.create({
       booking: bookingId,
       amount: booking.totalPrice,
-      status: 'completed', // In production, this would be set after Stripe confirmation
-      transactionId: `stripe_${Date.now()}`, // Placeholder
+      status: 'completed', // In production, this would be set after Razorpay confirmation
+      transactionId: `razorpay_${Date.now()}`, // Placeholder
     });
 
     await Booking.findByIdAndUpdate(bookingId, {

@@ -25,7 +25,7 @@ const PaymentSchema: Schema = new Schema(
     },
     currency: {
       type: String,
-      default: 'USD',
+      default: 'INR',
     },
     status: {
       type: String,
@@ -34,7 +34,7 @@ const PaymentSchema: Schema = new Schema(
     },
     paymentMethod: {
       type: String,
-      default: 'stripe',
+      default: 'razorpay',
     },
     transactionId: {
       type: String,

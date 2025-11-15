@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, X, Car, LogOut, LayoutDashboard } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, Car, LogOut, User, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,10 +12,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUserStore } from '@/stores/useUserStore';
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { profile, fetchProfile } = useUserStore();
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchProfile();
+    }
+  }, [session?.user?.id, fetchProfile]);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -38,22 +46,24 @@ export default function Navbar() {
             </Link>
             {session ? (
               <>
-                <Link
-                  href="/dashboard"
-                  className="text-sm font-medium text-gray-700 transition-colors hover:text-[#6366f1]"
-                >
-                  Dashboard
-                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={session.user.avatar} alt={session.user.name} />
-                        <AvatarFallback>
-                          {session.user.name?.charAt(0).toUpperCase()}
+                    <button 
+                      type="button"
+                      className="relative h-10 w-10 rounded-full overflow-hidden hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                      aria-label="User menu"
+                    >
+                      <Avatar className="h-10 w-10 border-2 border-gray-200 ring-2 ring-white" key={profile?.avatar || 'no-avatar'}>
+                        <AvatarImage 
+                          src={profile?.avatar || ''} 
+                          alt={session.user?.name || 'User'}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold text-base flex items-center justify-center">
+                          {session.user?.name?.charAt(0).toUpperCase() || session.user?.email?.charAt(0).toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
                     <div className="px-2 py-1.5">
@@ -61,9 +71,21 @@ export default function Navbar() {
                       <p className="text-xs text-gray-500">{session.user.email}</p>
                     </div>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="cursor-pointer">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Dashboard
+                      <Link href="/my-cars" className="cursor-pointer">
+                        <Car className="mr-2 h-4 w-4" />
+                        My Cars
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/my-bookings" className="cursor-pointer">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        My Bookings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -116,18 +138,11 @@ export default function Navbar() {
               </Link>
               {session ? (
                 <>
-                  <Link
-                    href="/dashboard"
-                    className="text-sm font-medium text-gray-700 transition-colors hover:text-[#6366f1]"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
                   <div className="flex items-center space-x-3 pt-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={session.user.avatar} alt={session.user.name} />
-                      <AvatarFallback>
-                        {session.user.name?.charAt(0).toUpperCase()}
+                    <Avatar className="h-10 w-10 border-2 border-gray-200" key={profile?.avatar || 'no-avatar'}>
+                      <AvatarImage src={profile?.avatar || ''} alt={session.user?.name || 'User'} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold text-base flex items-center justify-center">
+                        {session.user?.name?.charAt(0).toUpperCase() || session.user?.email?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -135,6 +150,27 @@ export default function Navbar() {
                       <p className="text-xs text-gray-500">{session.user.email}</p>
                     </div>
                   </div>
+                  <Link
+                    href="/my-cars"
+                    className="text-sm font-medium text-gray-700 transition-colors hover:text-[#6366f1]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Cars
+                  </Link>
+                  <Link
+                    href="/my-bookings"
+                    className="text-sm font-medium text-gray-700 transition-colors hover:text-[#6366f1]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Bookings
+                  </Link>
+                  <Link
+                    href="/profile"
+                    className="text-sm font-medium text-gray-700 transition-colors hover:text-[#6366f1]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
                   <Button
                     variant="outline"
                     className="w-full justify-start"

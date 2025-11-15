@@ -21,6 +21,7 @@ interface CarCardProps {
     seats: number;
     fuelType: string;
     transmission: string;
+    available?: boolean;
   };
 }
 
@@ -32,7 +33,7 @@ export default function CarCard({ car }: CarCardProps) {
       transition={{ duration: 0.3 }}
     >
       <Link href={`/cars/${car._id}`}>
-        <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg">
+        <Card className={`group h-full overflow-hidden transition-shadow hover:shadow-lg ${car.available === false ? 'opacity-75' : ''}`}>
           <div className="relative h-48 w-full overflow-hidden sm:h-56">
             <Image
               src={car.images[0] || '/placeholder.svg'}
@@ -41,10 +42,15 @@ export default function CarCard({ car }: CarCardProps) {
               className="object-cover transition-transform duration-300 group-hover:scale-110"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-            <div className="absolute right-2 top-2">
+            <div className="absolute right-2 top-2 flex flex-col gap-2">
               <Badge className="bg-white/90 text-gray-900">
-                ${car.pricePerDay}/day
+                ₹{car.pricePerDay}/day
               </Badge>
+              {car.available === false && (
+                <Badge className="bg-red-500/90 text-white">
+                  Unavailable
+                </Badge>
+              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -87,7 +93,7 @@ export default function CarCard({ car }: CarCardProps) {
               )}
             </div>
             <span className="text-sm font-semibold text-[#6366f1] sm:text-base">
-              ${car.pricePerDay}
+              ₹{car.pricePerDay}
               <span className="text-xs font-normal text-gray-500">/day</span>
             </span>
           </CardFooter>

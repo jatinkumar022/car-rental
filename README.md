@@ -9,7 +9,7 @@ A modern, full-featured car rental platform built with Next.js 14, MongoDB, and 
 - 🔍 **Search & Filter** - Advanced filtering by type, transmission, fuel, price, location
 - 📅 **Booking System** - Easy booking with date selection
 - ⭐ **Reviews & Ratings** - Users can review cars after booking
-- 💳 **Payment Integration** - Stripe placeholder for payments
+- 💳 **Payment Integration** - Razorpay placeholder for payments
 - 📱 **Fully Responsive** - Works seamlessly from 320px to desktop
 - 🎨 **Modern UI** - Built with Tailwind CSS and Shadcn UI
 

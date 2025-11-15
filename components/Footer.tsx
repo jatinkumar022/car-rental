@@ -1,38 +1,43 @@
 import Link from 'next/link';
-import { Car, Mail, Phone, MapPin } from 'lucide-react';
+import { Car } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-gray-50">
-      <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+    <footer className="bg-gray-900 text-gray-300 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
-          <div className="space-y-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <Car className="h-6 w-6 text-[#6366f1] sm:h-8 sm:w-8" />
-              <span className="text-xl font-bold text-[#6366f1]">Carido</span>
+          <div>
+            <Link href="/" className="flex items-center space-x-2 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <Car className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white">Carido</span>
             </Link>
-            <p className="text-sm text-gray-600">
-              Your trusted car rental platform. Find the perfect vehicle for your journey.
-            </p>
+            <p className="text-gray-400">Your trusted platform for car rentals and listings.</p>
           </div>
 
-          {/* Quick Links */}
+          {/* Company */}
           <div>
-            <h3 className="mb-4 font-semibold text-gray-900">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-white font-semibold mb-4">Company</h3>
+            <ul className="space-y-2">
               <li>
-                <Link href="/cars" className="text-gray-600 transition-colors hover:text-[#6366f1]">
+                <Link href="/cars" className="hover:text-white transition">
                   Browse Cars
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="text-gray-600 transition-colors hover:text-[#6366f1]">
-                  Dashboard
+                <Link href="/my-cars" className="hover:text-white transition">
+                  My Cars
                 </Link>
               </li>
               <li>
-                <Link href="/auth/register" className="text-gray-600 transition-colors hover:text-[#6366f1]">
+                <Link href="/my-bookings" className="hover:text-white transition">
+                  My Bookings
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/register" className="hover:text-white transition">
                   Become an Owner
                 </Link>
               </li>
@@ -41,51 +46,52 @@ export default function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="mb-4 font-semibold text-gray-900">Support</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-white font-semibold mb-4">Support</h3>
+            <ul className="space-y-2">
               <li>
-                <Link href="#" className="text-gray-600 transition-colors hover:text-[#6366f1]">
+                <Link href="#" className="hover:text-white transition">
                   Help Center
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-gray-600 transition-colors hover:text-[#6366f1]">
+                <Link href="#" className="hover:text-white transition">
                   Safety
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-gray-600 transition-colors hover:text-[#6366f1]">
-                  Terms & Conditions
+                <Link href="#" className="hover:text-white transition">
+                  Contact
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Legal */}
           <div>
-            <h3 className="mb-4 font-semibold text-gray-900">Contact Us</h3>
-            <ul className="space-y-3 text-sm text-gray-600">
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>support@carido.com</span>
+            <h3 className="text-white font-semibold mb-4">Legal</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="#" className="hover:text-white transition">
+                  Privacy Policy
+                </Link>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <span>+91 1800-XXX-XXXX</span>
+              <li>
+                <Link href="#" className="hover:text-white transition">
+                  Terms of Service
+                </Link>
               </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5" />
-                <span>India</span>
+              <li>
+                <Link href="#" className="hover:text-white transition">
+                  Cookie Policy
+                </Link>
               </li>
             </ul>
           </div>
         </div>
-
-        <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600">
-          <p>&copy; {new Date().getFullYear()} Carido. All rights reserved.</p>
+        <div className="border-t border-gray-800 pt-8 text-center">
+          <p className="text-gray-400">© {new Date().getFullYear()} Carido. All rights reserved.</p>
         </div>
       </div>
     </footer>
   );
 }
-

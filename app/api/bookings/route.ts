@@ -70,6 +70,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!car.available) {
+      return NextResponse.json(
+        { error: 'This car is currently unavailable for booking' },
+        { status: 400 }
+      );
+    }
+
     const start = new Date(startDate);
     const end = new Date(endDate);
     const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));

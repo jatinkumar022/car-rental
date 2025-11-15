@@ -13,13 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -31,7 +24,6 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'renter',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,7 +51,6 @@ export default function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role: formData.role,
         }),
       });
 
@@ -78,15 +69,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#6366f1] via-[#8b5cf6] to-[#a855f7] px-4 py-12">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 px-4 py-12">
+      <Card className="w-full max-w-md shadow-2xl border-0">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#6366f1]/10">
-            <Car className="h-6 w-6 text-[#6366f1]" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100">
+            <Car className="h-8 w-8 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
-          <CardDescription>
-            Sign up to start renting or listing cars
+          <CardTitle className="text-3xl font-bold text-gray-900">Create Account</CardTitle>
+          <CardDescription className="text-base">
+            Sign up to start your car rental journey
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -125,24 +116,6 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">I want to</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, role: value })
-                }
-                disabled={loading}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="renter">Rent Cars</SelectItem>
-                  <SelectItem value="owner">List My Cars</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -174,7 +147,7 @@ export default function RegisterPage() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] hover:from-[#4f46e5] hover:to-[#7c3aed] text-white"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={loading}
             >
               {loading ? (
@@ -191,7 +164,7 @@ export default function RegisterPage() {
             <span className="text-gray-600">Already have an account? </span>
             <Link
               href="/auth/login"
-              className="font-medium text-[#6366f1] hover:underline"
+              className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition"
             >
               Sign in
             </Link>

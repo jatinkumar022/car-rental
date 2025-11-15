@@ -5,42 +5,31 @@ interface LoaderProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   text?: string;
+  fullHeight?: boolean;
 }
 
-export default function Loader({ size = 'md', className, text }: LoaderProps) {
+export default function Loader({ 
+  size = 'md', 
+  className, 
+  text,
+  fullHeight = false 
+}: LoaderProps) {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-8 w-8',
     lg: 'h-12 w-12',
   };
 
+  const heightClass = fullHeight ? 'min-h-[400px]' : '';
+
   return (
-    <div className={cn('flex flex-col items-center justify-center gap-3', className)}>
+    <div className={cn(
+      'flex flex-col items-center justify-center gap-3 w-full',
+      heightClass,
+      className
+    )}>
       <Loader2 className={cn('animate-spin text-[#6366f1]', sizeClasses[size])} />
       {text && <p className="text-sm text-gray-600">{text}</p>}
-    </div>
-  );
-}
-
-export function SkeletonLoader({ className }: { className?: string }) {
-  return (
-    <div className={cn('animate-pulse rounded-lg bg-gray-200', className)} />
-  );
-}
-
-export function CardSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-2xl border bg-white shadow-md">
-      <SkeletonLoader className="h-48 w-full sm:h-56" />
-      <div className="p-4 space-y-3">
-        <SkeletonLoader className="h-5 w-3/4" />
-        <SkeletonLoader className="h-4 w-1/2" />
-        <div className="flex gap-2">
-          <SkeletonLoader className="h-4 w-16" />
-          <SkeletonLoader className="h-4 w-16" />
-        </div>
-        <SkeletonLoader className="h-4 w-1/3" />
-      </div>
     </div>
   );
 }

@@ -67,15 +67,15 @@ CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz123456
 
 ## Optional Environment Variables
 
-### Stripe (for future payment integration)
+### Razorpay (for future payment integration)
 
 ```env
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+RAZORPAY_WEBHOOK_SECRET=...
 ```
 
-**Description:** Stripe API keys for payment processing. Currently, the payment endpoint is a placeholder, but you can add Stripe integration later.
+**Description:** Razorpay API keys for payment processing. Currently, the payment endpoint is a placeholder, but you can add Razorpay integration later.
 
 ---
 

@@ -20,7 +20,12 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location') || '';
     const ownerId = searchParams.get('ownerId') || '';
 
-    const query: CarQuery = { available: true };
+    const query: CarQuery = {};
+
+    // Only filter by available status for public browsing (not when viewing owner's own cars)
+    if (!ownerId) {
+      query.available = true;
+    }
 
     if (ownerId) {
       query.owner = ownerId;
