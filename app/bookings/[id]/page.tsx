@@ -172,6 +172,7 @@ export default function BookingDetailsPage() {
   }
 
   // Helper to get ID from object or string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getId = (obj: any): string | null => {
     if (!obj) return null;
     if (typeof obj === 'string') return obj;

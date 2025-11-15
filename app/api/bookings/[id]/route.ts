@@ -56,6 +56,7 @@ export async function GET(
     }
 
     // Convert to object and add owner
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bookingObj: any = populatedBooking.toObject();
     if (car.owner && typeof car.owner === 'object' && car.owner !== null && '_id' in car.owner) {
       bookingObj.owner = car.owner;

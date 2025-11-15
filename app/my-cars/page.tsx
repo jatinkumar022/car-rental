@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -63,11 +64,11 @@ export default function MyCarsPage() {
   const [carForm, setCarForm] = useState({
     make: '',
     model: '',
-    year: new Date().getFullYear(),
+    year: new Date().getFullYear().toString(),
     type: '',
     transmission: 'automatic',
     fuelType: 'petrol',
-    seats: 5,
+    seats: '5',
     pricePerDay: '',
     location: '',
     description: '',
@@ -108,12 +109,14 @@ export default function MyCarsPage() {
     
     if (validateRequired(carForm.make, 'Make')) newErrors.make = validateRequired(carForm.make, 'Make')!;
     if (validateRequired(carForm.model, 'Model')) newErrors.model = validateRequired(carForm.model, 'Model')!;
-    if (validateYear(carForm.year)) newErrors.year = validateYear(carForm.year)!;
+    const yearNum = parseInt(carForm.year);
+    if (validateYear(yearNum)) newErrors.year = validateYear(yearNum)!;
     if (validateRequired(carForm.type, 'Type')) newErrors.type = validateRequired(carForm.type, 'Type')!;
     if (validateRequired(carForm.location, 'Location')) newErrors.location = validateRequired(carForm.location, 'Location')!;
     if (validateRequired(carForm.description, 'Description')) newErrors.description = validateRequired(carForm.description, 'Description')!;
     if (validatePrice(carForm.pricePerDay)) newErrors.pricePerDay = validatePrice(carForm.pricePerDay)!;
-    if (validateNumber(carForm.seats, 'Seats', 2, 20)) newErrors.seats = validateNumber(carForm.seats, 'Seats', 2, 20)!;
+    const seatsNum = parseInt(carForm.seats);
+    if (validateNumber(seatsNum, 'Seats', 2, 20)) newErrors.seats = validateNumber(seatsNum, 'Seats', 2, 20)!;
     if (carForm.images.length === 0) newErrors.images = 'At least one image is required';
 
     setErrors(newErrors);
@@ -127,6 +130,8 @@ export default function MyCarsPage() {
 
     const success = await createCar({
       ...carForm,
+      year: parseInt(carForm.year) || new Date().getFullYear(),
+      seats: parseInt(carForm.seats) || 5,
       features: carForm.features
         .split(',')
         .map((f) => f.trim())
@@ -140,11 +145,11 @@ export default function MyCarsPage() {
       setCarForm({
         make: '',
         model: '',
-        year: new Date().getFullYear(),
+        year: new Date().getFullYear().toString(),
         type: '',
         transmission: 'automatic',
         fuelType: 'petrol',
-        seats: 5,
+        seats: '5',
         pricePerDay: '',
         location: '',
         description: '',
@@ -219,7 +224,7 @@ export default function MyCarsPage() {
                   Add New Car
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+              <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold">Add New Car</DialogTitle>
                   <DialogDescription className="text-base">
@@ -262,13 +267,20 @@ export default function MyCarsPage() {
                         type="number"
                         value={carForm.year}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          const numValue = value === '' ? new Date().getFullYear() : parseInt(value, 10);
                           setCarForm({
                             ...carForm,
-                            year: isNaN(numValue) ? new Date().getFullYear() : numValue,
+                            year: e.target.value,
                           });
                           if (errors.year) setErrors({ ...errors, year: '' });
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || isNaN(parseInt(value, 10))) {
+                            setCarForm({
+                              ...carForm,
+                              year: new Date().getFullYear().toString(),
+                            });
+                          }
                         }}
                         aria-invalid={!!errors.year}
                       />
@@ -341,12 +353,19 @@ export default function MyCarsPage() {
                         type="number"
                         value={carForm.seats}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          const numValue = value === '' ? 5 : parseInt(value, 10);
                           setCarForm({
                             ...carForm,
-                            seats: isNaN(numValue) ? 5 : numValue,
+                            seats: e.target.value,
                           });
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || isNaN(parseInt(value, 10))) {
+                            setCarForm({
+                              ...carForm,
+                              seats: '5',
+                            });
+                          }
                         }}
                         min={2}
                         max={20}
@@ -432,13 +451,15 @@ export default function MyCarsPage() {
                       </div>
                     )}
                   </div>
+                </div>
+                <DialogFooter>
                   <Button
                     onClick={handleAddCar}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Add Car
                   </Button>
-                </div>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>

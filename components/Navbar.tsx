@@ -71,6 +71,12 @@ export default function Navbar() {
                       <p className="text-xs text-gray-500">{session.user.email}</p>
                     </div>
                     <DropdownMenuItem asChild>
+                      <Link href="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link href="/my-cars" className="cursor-pointer">
                         <Car className="mr-2 h-4 w-4" />
                         My Cars
@@ -80,12 +86,6 @@ export default function Navbar() {
                       <Link href="/my-bookings" className="cursor-pointer">
                         <Calendar className="mr-2 h-4 w-4" />
                         My Bookings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="cursor-pointer">
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem

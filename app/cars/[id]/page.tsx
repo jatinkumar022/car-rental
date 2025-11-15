@@ -318,12 +318,12 @@ export default function CarDetailPage() {
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="flex w-full flex-wrap gap-2 mb-6">
-                    <TabsTrigger value="location" className="flex-1 min-w-[120px]">Location</TabsTrigger>
-                    <TabsTrigger value="reviews" className="flex-1 min-w-[120px]">Reviews ({reviews.length})</TabsTrigger>
-                    <TabsTrigger value="features" className="flex-1 min-w-[120px]">Features</TabsTrigger>
-                    <TabsTrigger value="benefits" className="flex-1 min-w-[120px]">Benefits</TabsTrigger>
-                    <TabsTrigger value="faqs" className="flex-1 min-w-[120px]">FAQs</TabsTrigger>
+                  <TabsList className="flex w-full gap-2 mb-6 overflow-x-auto scrollbar-hide">
+                    <TabsTrigger value="location" className="min-w-[120px] whitespace-nowrap flex-shrink-0">Location</TabsTrigger>
+                    <TabsTrigger value="reviews" className="min-w-[120px] whitespace-nowrap flex-shrink-0">Reviews ({reviews.length})</TabsTrigger>
+                    <TabsTrigger value="features" className="min-w-[120px] whitespace-nowrap flex-shrink-0">Features</TabsTrigger>
+                    <TabsTrigger value="benefits" className="min-w-[120px] whitespace-nowrap flex-shrink-0">Benefits</TabsTrigger>
+                    <TabsTrigger value="faqs" className="min-w-[120px] whitespace-nowrap flex-shrink-0">FAQs</TabsTrigger>
                   </TabsList>
                   <TabsContent value="location" className="space-y-4">
                     <div>
@@ -538,7 +538,7 @@ export default function CarDetailPage() {
                         <h3 className="text-lg font-semibold">Trip Protection</h3>
                       </div>
                       <p className="text-gray-700 mb-4">
-                        Your trip is secured against accidental damage. Travel with confidence knowing you're protected.
+                        Your trip is secured against accidental damage. Travel with confidence knowing you&apos;re protected.
                       </p>
                       <Button variant="outline" size="sm">Learn More</Button>
                     </div>
@@ -782,31 +782,31 @@ export default function CarDetailPage() {
                 <Separator className="my-6" />
 
                 {car.owner && (
-                  <div>
-                    <h3 className="mb-4 text-lg font-semibold text-gray-900">Owner</h3>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                        {car.owner.name?.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{car.owner.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>Verified Owner</span>
-                        </div>
-                      </div>
+                <div>
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900">Owner</h3>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                      {car.owner.name?.charAt(0).toUpperCase()}
                     </div>
-                    {car.owner.phone && (
-                      <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                        <Phone className="h-4 w-4" />
-                        <span>{car.owner.phone}</span>
+                    <div>
+                      <p className="font-semibold text-gray-900">{car.owner.name}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <span>Verified Owner</span>
                       </div>
-                    )}
-                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
-                      <Mail className="h-4 w-4" />
-                      <span>{car.owner.email}</span>
                     </div>
                   </div>
+                  {car.owner.phone && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="h-4 w-4" />
+                      <span>{car.owner.phone}</span>
+                    </div>
+                  )}
+                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                    <Mail className="h-4 w-4" />
+                    <span>{car.owner.email}</span>
+                  </div>
+                </div>
                 )}
               </CardContent>
             </Card>

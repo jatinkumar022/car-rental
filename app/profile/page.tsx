@@ -55,8 +55,26 @@ export default function ProfilePage() {
         phone: profile.phone || '',
         avatar: profile.avatar || '',
       };
-      setInitialData(data);
-      setProfileData(data);
+      // Sync external state (Zustand store) to local form state
+      // This is necessary to sync Zustand store data to local form state for editing
+      // Using functional updates to avoid unnecessary re-renders
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setInitialData((prev) => {
+        const hasChanged = 
+          prev.name !== data.name ||
+          prev.email !== data.email ||
+          prev.phone !== data.phone ||
+          prev.avatar !== data.avatar;
+        return hasChanged ? data : prev;
+      });
+      setProfileData((prev) => {
+        const hasChanged = 
+          prev.name !== data.name ||
+          prev.email !== data.email ||
+          prev.phone !== data.phone ||
+          prev.avatar !== data.avatar;
+        return hasChanged ? data : prev;
+      });
     }
   }, [profile]);
 

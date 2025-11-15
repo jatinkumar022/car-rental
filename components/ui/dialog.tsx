@@ -90,14 +90,18 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   const childrenArray = React.Children.toArray(children);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hasHeader = childrenArray.some((child: any) => 
     child?.props?.['data-slot'] === 'dialog-header' || 
     child?.type?.displayName === 'DialogHeader' ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (typeof child === 'object' && child !== null && 'type' in child && (child.type as any)?.displayName === 'DialogHeader')
   );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hasFooter = childrenArray.some((child: any) => 
     child?.props?.['data-slot'] === 'dialog-footer' || 
     child?.type?.displayName === 'DialogFooter' ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (typeof child === 'object' && child !== null && 'type' in child && (child.type as any)?.displayName === 'DialogFooter')
   );
 
@@ -109,35 +113,43 @@ function DialogContent({
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed z-50 flex flex-col w-full max-w-[calc(100%-2rem)] max-h-[95vh] rounded-2xl border border-gray-200 shadow-2xl duration-200 overflow-hidden",
           // Mobile: bottom positioning with slide-up animation
-          "bottom-0 left-[50%] translate-x-[-50%] translate-y-0 data-[state=closed]:translate-y-full data-[state=open]:translate-y-0 rounded-b-none sm:rounded-b-2xl",
-          // Desktop: center positioning with zoom animation
-          "sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:data-[state=closed]:translate-y-[-50%] sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:max-w-lg sm:max-h-[90vh]",
+          "bottom-0 left-[50%] translate-x-[-50%] translate-y-0 data-[state=closed]:translate-y-full data-[state=open]:translate-y-0 rounded-b-none",
+          // Desktop: center positioning with zoom animation - completely override mobile positioning
+          "sm:!bottom-auto sm:!top-[50%] sm:!translate-y-[-50%] sm:data-[state=closed]:!translate-y-[-50%] sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:max-w-lg sm:max-h-[90vh] sm:rounded-b-2xl",
           className
         )}
         {...props}
       >
-        <div className="flex flex-col h-full max-h-[95vh] sm:max-h-[90vh]">
+        <div className="flex flex-col h-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
           {hasHeader || hasFooter ? (
             <>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {childrenArray.filter((child: any) => 
                 child?.props?.['data-slot'] === 'dialog-header' || 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (typeof child === 'object' && child !== null && 'type' in child && (child.type as any)?.displayName === 'DialogHeader')
               )}
-              <div className="flex-1 overflow-y-auto px-6 py-4 sm:px-6 sm:py-4 min-h-0">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4 sm:px-6 sm:py-4 min-h-0">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {childrenArray.filter((child: any) => 
                   child?.props?.['data-slot'] !== 'dialog-header' && 
                   child?.props?.['data-slot'] !== 'dialog-footer' &&
                   !((typeof child === 'object' && child !== null && 'type' in child && 
-                    ((child.type as any)?.displayName === 'DialogHeader' || (child.type as any)?.displayName === 'DialogFooter')))
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ((child.type as any)?.displayName === 'DialogHeader' || 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (child.type as any)?.displayName === 'DialogFooter')))
                 )}
               </div>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {childrenArray.filter((child: any) => 
                 child?.props?.['data-slot'] === 'dialog-footer' || 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (typeof child === 'object' && child !== null && 'type' in child && (child.type as any)?.displayName === 'DialogFooter')
               )}
             </>
           ) : (
-            <div className="flex-1 overflow-y-auto px-6 py-4 sm:px-6 sm:py-4 min-h-0">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4 sm:px-6 sm:py-4 min-h-0">
               {children}
             </div>
           )}
@@ -163,7 +175,7 @@ const DialogHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"
         ref={ref}
         data-slot="dialog-header"
         className={cn(
-          "flex flex-col gap-2 text-center sm:text-left flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4 sm:px-6 sm:py-4 rounded-t-2xl",
+          "sticky top-0 z-10 flex flex-col gap-2 text-center sm:text-left shrink-0 border-b border-gray-200 bg-white px-6 py-4 sm:px-6 sm:py-4 rounded-t-2xl",
           className
         )}
         {...props}
@@ -180,7 +192,7 @@ const DialogFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"
         ref={ref}
         data-slot="dialog-footer"
         className={cn(
-          "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end flex-shrink-0 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:px-6 sm:py-4 rounded-b-2xl",
+          "sticky bottom-0 z-10 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end shrink-0 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:px-6 sm:py-4 rounded-b-2xl",
           className
         )}
         {...props}

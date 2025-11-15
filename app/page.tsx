@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Star, Shield, Clock, ChevronLeft, ChevronRight, MapPin, Calendar, IndianRupee, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,14 +74,16 @@ export default function Home() {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // heroSlides.length is constant, no need to include in deps
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // testimonials.length is constant, no need to include in deps
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -93,12 +96,16 @@ export default function Home() {
               index === currentSlide ? 'opacity-100' : 'opacity-0'
             }`}
           >
+            <div className="relative w-full h-full">
+              <Image 
+                src={slide.image} 
+                alt={slide.title} 
+                fill
+                className="object-cover" 
+                priority={index === 0}
+              />
+            </div>
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent z-10" />
-            <img 
-              src={slide.image} 
-              alt={slide.title} 
-              className="w-full h-full object-cover" 
-            />
             <div className="absolute inset-0 z-20 flex items-center">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div className="max-w-2xl">
@@ -303,11 +310,14 @@ export default function Home() {
             >
               <div className="bg-white rounded-3xl p-10 shadow-xl">
                 <div className="flex items-center mb-6">
-                  <img 
-                    src={testimonial.image} 
-                    alt={testimonial.name} 
-                    className="w-16 h-16 rounded-full object-cover mr-4" 
-                  />
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden mr-4">
+                    <Image 
+                      src={testimonial.image} 
+                      alt={testimonial.name} 
+                      fill
+                      className="object-cover" 
+                    />
+                  </div>
                   <div>
                     <h4 className="font-bold text-gray-900 text-lg">{testimonial.name}</h4>
                     <p className="text-gray-600">{testimonial.role}</p>
