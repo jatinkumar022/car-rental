@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
-    const reviews = await Review.find({ car: carId })
-      .populate('user', 'name avatar')
+    const reviews = await Review.find({ carId: carId })
+      .populate('reviewerId', 'firstName lastName profileImage')
+      .populate('reviewedId', 'firstName lastName profileImage')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({ reviews }, { status: 200 });
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    if (booking.renter.toString() !== session.user!.id) {
+    if (booking.renterId.toString() !== session.user!.id) {
       return NextResponse.json(
         { error: 'You can only review your own bookings' },
         { status: 403 }
@@ -71,35 +72,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingReview = await Review.findOne({ car: carId, user: session.user!.id });
+    const car = await Car.findById(carId);
+    if (!car) {
+      return NextResponse.json({ error: 'Car not found' }, { status: 404 });
+    }
+
+    const existingReview = await Review.findOne({ 
+      carId: carId, 
+      reviewerId: session.user!.id,
+      bookingId: bookingId,
+    });
     if (existingReview) {
       return NextResponse.json(
-        { error: 'You have already reviewed this car' },
+        { error: 'You have already reviewed this booking' },
         { status: 400 }
       );
     }
 
     const review = await Review.create({
-      user: session.user!.id,
-      car: carId,
-      booking: bookingId,
+      reviewerId: session.user!.id,
+      reviewedId: car.hostId,
+      carId: carId,
+      bookingId: bookingId,
       rating,
-      comment,
+      reviewText: comment,
     });
 
-    const reviews = await Review.find({ car: carId });
+    const reviews = await Review.find({ carId: carId });
     const avgRating =
-      reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+      reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 0;
 
     await Car.findByIdAndUpdate(carId, {
       rating: avgRating,
-      totalReviews: reviews.length,
+      totalTrips: reviews.length,
     });
 
-    const populatedReview = await Review.findById(review._id).populate(
-      'user',
-      'name avatar'
-    );
+    const populatedReview = await Review.findById(review._id)
+      .populate('reviewerId', 'firstName lastName profileImage')
+      .populate('reviewedId', 'firstName lastName profileImage');
 
     return NextResponse.json({ review: populatedReview }, { status: 201 });
   } catch (error) {

@@ -1,49 +1,58 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IPayment extends Document {
-  booking: mongoose.Types.ObjectId;
+  bookingId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
   amount: number;
-  currency: string;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  paymentMethod: string;
+  paymentMethod: 'card' | 'upi' | 'wallet' | 'netbanking';
   transactionId?: string;
+  status: 'pending' | 'success' | 'failed' | 'refunded';
   createdAt: Date;
-  updatedAt: Date;
 }
 
 const PaymentSchema: Schema = new Schema(
   {
-    booking: {
+    bookingId: {
       type: Schema.Types.ObjectId,
       ref: 'Booking',
       required: true,
-      unique: true,
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
     amount: {
       type: Number,
       required: true,
     },
-    currency: {
-      type: String,
-      default: 'INR',
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'completed', 'failed', 'refunded'],
-      default: 'pending',
-    },
     paymentMethod: {
       type: String,
-      default: 'razorpay',
+      enum: ['card', 'upi', 'wallet', 'netbanking'],
+      default: 'card',
     },
     transactionId: {
       type: String,
+      unique: true,
+      sparse: true,
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'success', 'failed', 'refunded'],
+      default: 'pending',
     },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: true, updatedAt: false },
   }
 );
+
+// Database indexes for better query performance
+PaymentSchema.index({ bookingId: 1 });
+PaymentSchema.index({ userId: 1 });
+PaymentSchema.index({ status: 1 });
+PaymentSchema.index({ transactionId: 1 }, { unique: true, sparse: true });
+PaymentSchema.index({ userId: 1, createdAt: -1 });
 
 const Payment: Model<IPayment> = mongoose.models.Payment || mongoose.model<IPayment>('Payment', PaymentSchema);
 

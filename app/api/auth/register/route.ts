@@ -5,11 +5,11 @@ import User from '@/models/User';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const { firstName, lastName, email, password, userType } = body;
 
-    if (!name || !email || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Please provide all required fields' },
+        { error: 'Please provide email and password' },
         { status: 400 }
       );
     }
@@ -25,10 +25,11 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await User.create({
-      name,
+      firstName,
+      lastName,
       email,
       password,
-      role: 'renter',
+      userType: userType || 'renter',
     });
 
     return NextResponse.json(
@@ -36,9 +37,10 @@ export async function POST(request: NextRequest) {
         message: 'User created successfully',
         user: {
           id: user._id,
-          name: user.name,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
-          role: user.role,
+          userType: user.userType,
         },
       },
       { status: 201 }

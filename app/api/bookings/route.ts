@@ -18,15 +18,16 @@ export async function GET(request: NextRequest) {
 
     const query: Record<string, unknown> = {};
     if (role === 'renter') {
-      query.renter = session.user.id;
+      query.renterId = session.user.id;
     } else {
-      const userCars = await Car.find({ owner: session.user.id }).select('_id');
-      query.car = { $in: userCars.map((c) => c._id) };
+      const userCars = await Car.find({ hostId: session.user.id }).select('_id');
+      query.carId = { $in: userCars.map((c) => c._id) };
     }
 
     const bookings = await Booking.find(query)
-      .populate('car', 'make model images pricePerDay')
-      .populate('renter', 'name email avatar')
+      .populate('carId', 'make model images dailyPrice')
+      .populate('renterId', 'firstName lastName email profileImage')
+      .populate('hostId', 'firstName lastName email profileImage')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({ bookings }, { status: 200 });
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { carId, startDate, endDate } = body;
+    const { carId, startDate, endDate, pickupTime, returnTime, totalDays: providedTotalDays, dailyRate: providedDailyRate, subtotal: providedSubtotal, serviceFee: providedServiceFee, insuranceFee: providedInsuranceFee, gst: providedGst, totalAmount: providedTotalAmount } = body;
 
     if (!carId || !startDate || !endDate) {
       return NextResponse.json(
@@ -63,14 +64,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Car not found' }, { status: 404 });
     }
 
-    if (car.owner.toString() === session.user.id) {
+    if (car.hostId.toString() === session.user.id) {
       return NextResponse.json(
         { error: 'You cannot book your own car' },
         { status: 400 }
       );
     }
 
-    if (!car.available) {
+    if (car.status !== 'active') {
       return NextResponse.json(
         { error: 'This car is currently unavailable for booking' },
         { status: 400 }
@@ -79,7 +80,8 @@ export async function POST(request: NextRequest) {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const calculatedTotalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const totalDays = providedTotalDays || calculatedTotalDays;
 
     if (totalDays <= 0) {
       return NextResponse.json(
@@ -89,8 +91,8 @@ export async function POST(request: NextRequest) {
     }
 
     const existingBooking = await Booking.findOne({
-      car: carId,
-      status: { $in: ['pending', 'confirmed'] },
+      carId: carId,
+      status: { $in: ['pending', 'confirmed', 'ongoing'] },
       $or: [
         {
           startDate: { $lte: end },
@@ -106,20 +108,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const totalPrice = car.pricePerDay * totalDays;
+    // Use provided pricing or calculate
+    const dailyRate = providedDailyRate || car.dailyPrice;
+    const subtotal = providedSubtotal || (dailyRate * totalDays);
+    const serviceFee = providedServiceFee || (subtotal * 0.10); // 10% service fee
+    const insuranceFee = providedInsuranceFee || (150 * totalDays); // ₹150 per day
+    const gst = providedGst || ((subtotal + serviceFee + insuranceFee) * 0.18); // 18% GST
+    const totalAmount = providedTotalAmount || (subtotal + serviceFee + insuranceFee + gst);
 
     const booking = await Booking.create({
-      renter: session.user!.id,
-      car: carId,
+      renterId: session.user!.id,
+      hostId: car.hostId,
+      carId: carId,
       startDate: start,
       endDate: end,
+      pickupTime: pickupTime || '10:00',
+      returnTime: returnTime || '10:00',
       totalDays,
-      totalPrice,
+      dailyRate,
+      subtotal,
+      serviceFee,
+      insuranceFee,
+      gst,
+      discount: 0, // Can be added later for coupons
+      totalAmount,
     });
 
     const populatedBooking = await Booking.findById(booking._id)
-      .populate('car', 'make model images pricePerDay')
-      .populate('renter', 'name email avatar');
+      .populate('carId', 'make model images dailyPrice')
+      .populate('renterId', 'firstName lastName email profileImage')
+      .populate('hostId', 'firstName lastName email profileImage');
 
     return NextResponse.json({ booking: populatedBooking }, { status: 201 });
   } catch (error) {

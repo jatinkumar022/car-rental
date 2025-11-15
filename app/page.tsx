@@ -86,7 +86,7 @@ export default function Home() {
   }, []); // testimonials.length is constant, no need to include in deps
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-[#F7F7FA]">
       {/* Hero Carousel */}
       <div className="relative h-[600px] overflow-hidden">
         {heroSlides.map((slide, index) => (
@@ -105,7 +105,7 @@ export default function Home() {
                 priority={index === 0}
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent z-10" />
+            <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/50 to-transparent z-10" />
             <div className="absolute inset-0 z-20 flex items-center">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div className="max-w-2xl">
@@ -114,10 +114,10 @@ export default function Home() {
                   </h1>
                   <p className="text-xl text-gray-200 mb-8">{slide.subtitle}</p>
                   <div className="flex flex-wrap gap-4">
-                    <Button asChild size="lg" className="px-8 py-4 bg-white text-gray-900 rounded-xl font-semibold hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                    <Button asChild size="lg" className="px-8 py-4 bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105">
                       <Link href="/cars">Browse Cars</Link>
                     </Button>
-                    <Button asChild size="lg" variant="outline" className="px-8 py-4 bg-white/20 backdrop-blur-sm text-white rounded-xl font-semibold border-2 border-white hover:bg-white hover:text-gray-900 transition-all duration-300">
+                    <Button asChild size="lg" variant="outline" className="px-8 py-4 bg-white/20 backdrop-blur-sm text-white rounded-xl font-semibold border-2 border-white hover:bg-white hover:text-[#1A1A2E] transition-all duration-300">
                       <Link href="/my-cars">List Your Car</Link>
                     </Button>
                   </div>
@@ -156,7 +156,7 @@ export default function Home() {
 
       {/* Search Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-30">
-        <div className="bg-white rounded-2xl shadow-2xl p-6">
+        <div className="bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-8 max-w-[900px] mx-auto">
           <form action="/cars" method="get" className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Location</label>
@@ -195,7 +195,7 @@ export default function Home() {
             <div className="flex items-end">
               <Button 
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
+                className="w-full py-3 bg-[#00D09C] hover:bg-[#00B386] text-white rounded-lg font-semibold shadow-lg transition-all duration-300 hover:scale-105"
               >
                 Search Cars
               </Button>
@@ -204,8 +204,11 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Features Section */}
+      {/* Features Section - Why Choose Us */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-[#1A1A2E] mb-4">Why Choose Our Platform</h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {features.map((feature, index) => (
             <motion.div
@@ -214,13 +217,13 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-1"
             >
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-4">
-                <feature.icon className="w-7 h-7 text-blue-600" />
+              <div className="w-12 h-12 bg-[#E6FFF9] rounded-xl flex items-center justify-center mb-4">
+                <feature.icon className="w-6 h-6 text-[#00D09C]" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.desc}</p>
+              <h3 className="text-lg font-semibold text-[#1A1A2E] mb-2">{feature.title}</h3>
+              <p className="text-[#6C6C80] text-sm">{feature.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -230,10 +233,10 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="flex justify-between items-center mb-10">
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-2">Featured Cars</h2>
-            <p className="text-gray-600">Handpicked premium vehicles for your journey</p>
+            <h2 className="text-4xl font-bold text-[#1A1A2E] mb-2">Featured Cars</h2>
+            <p className="text-[#6C6C80]">Handpicked premium vehicles for your journey</p>
           </div>
-          <Button asChild variant="outline" className="hidden sm:inline-flex">
+          <Button asChild variant="outline" className="hidden sm:inline-flex border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]">
             <Link href="/cars">View All →</Link>
           </Button>
         </div>
@@ -258,17 +261,18 @@ export default function Home() {
       </div>
 
       {/* How It Works */}
-      <div className="bg-gradient-to-br from-blue-50 to-purple-50 py-20">
+      <div className="bg-linear-to-br from-[#E6FFF9] to-white py-20" id="how-it-works">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-xl text-gray-600">Simple steps to get you on the road</p>
+            <h2 className="text-4xl font-bold text-[#1A1A2E] mb-4">How It Works</h2>
+            <p className="text-xl text-[#6C6C80]">Simple steps to get you on the road</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
-              { step: "1", title: "Choose Your Car", desc: "Browse our extensive collection of vehicles and pick your perfect match" },
-              { step: "2", title: "Book Instantly", desc: "Reserve your car with just a few clicks and instant confirmation" },
-              { step: "3", title: "Hit the Road", desc: "Pick up your car and start your adventure with confidence" }
+              { step: "1", title: "Search", desc: "Find the perfect car for your journey", icon: "🔍" },
+              { step: "2", title: "Select", desc: "Choose your preferred vehicle", icon: "✓" },
+              { step: "3", title: "Book", desc: "Reserve with instant confirmation", icon: "💳" },
+              { step: "4", title: "Drive", desc: "Pick up and start your adventure", icon: "🚗" }
             ].map((item, index) => (
               <motion.div
                 key={index}
@@ -278,15 +282,15 @@ export default function Home() {
                 transition={{ delay: index * 0.1 }}
                 className="relative"
               >
-                <div className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6 text-white text-2xl font-bold">
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-1 text-center">
+                  <div className="w-16 h-16 bg-[#00D09C] rounded-full flex items-center justify-center mb-6 text-white text-2xl font-bold mx-auto">
                     {item.step}
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                  <p className="text-gray-600">{item.desc}</p>
+                  <h3 className="text-xl font-bold text-[#1A1A2E] mb-3">{item.title}</h3>
+                  <p className="text-[#6C6C80] text-sm">{item.desc}</p>
                 </div>
-                {index < 2 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600" />
+                {index < 3 && (
+                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-[#00D09C]" />
                 )}
               </motion.div>
             ))}
@@ -297,8 +301,8 @@ export default function Home() {
       {/* Testimonials */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
-          <p className="text-xl text-gray-600">Join thousands of satisfied customers</p>
+          <h2 className="text-4xl font-bold text-[#1A1A2E] mb-4">What Our Customers Say</h2>
+          <p className="text-xl text-[#6C6C80]">Join thousands of satisfied customers</p>
         </div>
         <div className="relative max-w-4xl mx-auto">
           {testimonials.map((testimonial, index) => (
@@ -308,7 +312,7 @@ export default function Home() {
                 index === currentTestimonial ? 'opacity-100' : 'opacity-0 absolute inset-0'
               }`}
             >
-              <div className="bg-white rounded-3xl p-10 shadow-xl">
+              <div className="bg-white rounded-2xl p-10 shadow-[0_4px_16px_rgba(0,0,0,0.12)] max-w-[360px] mx-auto">
                 <div className="flex items-center mb-6">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden mr-4">
                     <Image 
@@ -348,16 +352,16 @@ export default function Home() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-20">
+      <div className="bg-linear-to-r from-[#00D09C] to-[#00B386] py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Start Your Journey?</h2>
           <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">Join thousands of happy customers renting and listing cars on our platform</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button asChild size="lg" className="px-10 py-4 bg-white text-blue-600 rounded-xl font-semibold text-lg hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <Button asChild size="lg" className="px-10 py-4 bg-white text-[#00D09C] rounded-xl font-semibold text-lg hover:shadow-2xl transition-all duration-300 hover:scale-105">
               <Link href="/cars">Browse Cars Now</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="px-10 py-4 bg-white/20 backdrop-blur-sm text-white rounded-xl font-semibold text-lg border-2 border-white hover:bg-white hover:text-blue-600 transition-all duration-300">
-              <Link href="/dashboard">List Your Car</Link>
+            <Button asChild size="lg" variant="outline" className="px-10 py-4 bg-white/20 backdrop-blur-sm text-white rounded-xl font-semibold text-lg border-2 border-white hover:bg-white hover:text-[#00D09C] transition-all duration-300">
+              <Link href="/my-cars">List Your Car</Link>
             </Button>
           </div>
         </div>

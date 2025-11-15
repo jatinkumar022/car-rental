@@ -2,12 +2,19 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
-  name: string;
   email: string;
   password: string;
-  role: 'renter' | 'owner';
-  avatar?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
+  profileImage?: string;
+  dateOfBirth?: Date;
+  licenseNumber?: string;
+  licenseExpiry?: Date;
+  userType: 'renter' | 'host' | 'both';
+  verified: boolean;
+  rating: number;
+  totalTrips: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -15,11 +22,6 @@ export interface IUser extends Document {
 
 const UserSchema: Schema = new Schema(
   {
-    name: {
-      type: String,
-      required: [true, 'Please provide a name'],
-      trim: true,
-    },
     email: {
       type: String,
       required: [true, 'Please provide an email'],
@@ -33,22 +35,60 @@ const UserSchema: Schema = new Schema(
       minlength: 6,
       select: false,
     },
-    role: {
+    firstName: {
       type: String,
-      enum: ['renter', 'owner'],
-      default: 'renter',
+      trim: true,
     },
-    avatar: {
+    lastName: {
       type: String,
+      trim: true,
     },
     phone: {
       type: String,
+      trim: true,
+    },
+    profileImage: {
+      type: String,
+    },
+    dateOfBirth: {
+      type: Date,
+    },
+    licenseNumber: {
+      type: String,
+      trim: true,
+    },
+    licenseExpiry: {
+      type: Date,
+    },
+    userType: {
+      type: String,
+      enum: ['renter', 'host', 'both'],
+      default: 'renter',
+    },
+    verified: {
+      type: Boolean,
+      default: false,
+    },
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    totalTrips: {
+      type: Number,
+      default: 0,
     },
   },
   {
     timestamps: true,
   }
 );
+
+// Database indexes for better query performance
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ userType: 1 });
+UserSchema.index({ verified: 1 });
 
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {

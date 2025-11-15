@@ -18,6 +18,8 @@ import {
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Loader from '@/components/Loader';
+import BookingCardSkeleton from '@/components/BookingCardSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import {
@@ -32,24 +34,29 @@ import { toast } from 'sonner';
 
 interface Booking {
   _id: string;
-  car: {
+  carId?: {
     _id: string;
     make: string;
     model: string;
-    images: string[];
-    pricePerDay: number;
-    location: string;
+    images: Array<{ url: string }> | string[];
+    dailyPrice: number;
+    locationCity?: string;
+    locationAddress?: string;
   };
-  renter?: {
-    name: string;
+  car?: any; // Fallback
+  renterId?: {
+    firstName?: string;
+    lastName?: string;
     email: string;
-    avatar?: string;
+    profileImage?: string;
     phone?: string;
   };
+  renter?: any; // Fallback
   startDate: string;
   endDate: string;
   totalDays: number;
-  totalPrice: number;
+  totalAmount: number;
+  totalPrice?: number; // Fallback
   status: string;
   paymentStatus: string;
   createdAt: string;
@@ -86,15 +93,17 @@ export default function MyBookingsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-[#E6FFF9] text-[#00B386] border-[#00D09C]';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-[#FFE5E5] text-[#FF4444] border-[#FF4444]';
       case 'completed':
         return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'ongoing':
+        return 'bg-[#E6F3FF] text-[#2196F3] border-[#2196F3]';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-[#F7F7FA] text-[#6C6C80] border-[#E5E5EA]';
     }
   };
 
@@ -115,11 +124,20 @@ export default function MyBookingsPage() {
 
   const filteredBookings = (bookings: Booking[]) => {
     return bookings.filter((booking) => {
+      const car = booking.carId || booking.car;
+      const renter = booking.renterId || booking.renter;
+      const renterName = renter 
+        ? (renter.firstName && renter.lastName 
+            ? `${renter.firstName} ${renter.lastName}` 
+            : renter.name || renter.email || '')
+        : '';
+      
       const matchesSearch = 
-        booking.car.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.car.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.car.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (booking.renter && booking.renter.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        (car?.make?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+        (car?.model?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+        (car?.locationCity?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+        (car?.locationAddress?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+        (renterName.toLowerCase().includes(searchQuery.toLowerCase()) || false);
       
       const matchesFilter = 
         filterStatus === 'all' || booking.status === filterStatus;
@@ -132,13 +150,29 @@ export default function MyBookingsPage() {
     const isUpcoming = new Date(booking.startDate) > new Date() && booking.status !== 'cancelled';
     const isPast = new Date(booking.endDate) < new Date();
 
+    const car = booking.carId || booking.car;
+    const renter = booking.renterId || booking.renter;
+    const totalAmount = booking.totalAmount || booking.totalPrice || 0;
+    
+    const carImages = car?.images 
+      ? (typeof car.images[0] === 'string' 
+          ? car.images as string[]
+          : (car.images as Array<{ url: string }>).map(img => img.url))
+      : ['/placeholder.svg'];
+
+    const renterName = renter 
+      ? (renter.firstName && renter.lastName 
+          ? `${renter.firstName} ${renter.lastName}` 
+          : renter.name || renter.email || 'Unknown')
+      : 'Unknown';
+
     return (
-      <Card key={booking._id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+      <Card key={booking._id} className="overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-shadow">
         <div className="flex flex-col sm:flex-row">
-          <Link href={`/cars/${booking.car._id}`} className="relative h-48 w-full sm:h-auto sm:w-48 flex-shrink-0">
+          <Link href={`/cars/${car?._id || ''}`} className="relative h-48 w-full sm:h-auto sm:w-48 shrink-0">
             <Image
-              src={booking.car.images[0] || '/placeholder.svg'}
-              alt={`${booking.car.make} ${booking.car.model}`}
+              src={carImages[0] || '/placeholder.svg'}
+              alt={`${car?.make || ''} ${car?.model || ''}`}
               fill
               className="object-cover"
               sizes="(max-width: 640px) 100vw, 192px"
@@ -148,28 +182,28 @@ export default function MyBookingsPage() {
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex-1">
                 <div className="mb-3">
-                  <Link href={`/cars/${booking.car._id}`}>
-                    <h3 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition">
-                      {booking.car.make} {booking.car.model}
+                  <Link href={`/cars/${car?._id || ''}`}>
+                    <h3 className="text-xl font-semibold text-[#1A1A2E] hover:text-[#00D09C] transition">
+                      {car?.make} {car?.model}
                     </h3>
                   </Link>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 mt-1 text-sm text-[#6C6C80]">
                     <MapPin className="h-4 w-4" />
-                    <span>{booking.car.location}</span>
+                    <span>{car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}</span>
                   </div>
                 </div>
 
-                {showRenter && booking.renter && (
+                {showRenter && renter && (
                   <div className="mb-3 flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">{booking.renter.name}</span>
-                    {booking.renter.email && (
-                      <span className="text-xs text-gray-500">({booking.renter.email})</span>
+                    <User className="h-4 w-4 text-[#6C6C80]" />
+                    <span className="text-sm text-[#2D2D44]">{renterName}</span>
+                    {renter.email && (
+                      <span className="text-xs text-[#6C6C80]">({renter.email})</span>
                     )}
                   </div>
                 )}
 
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                <div className="space-y-2 text-sm text-[#6C6C80] mb-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span>
@@ -183,9 +217,9 @@ export default function MyBookingsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <IndianRupee className="h-4 w-4" />
-                    <span className="font-semibold text-gray-900">₹{booking.totalPrice}</span>
-                    <span className="text-xs text-gray-500">
-                      (₹{booking.car.pricePerDay}/day)
+                    <span className="font-semibold text-[#1A1A2E]">₹{totalAmount.toFixed(2)}</span>
+                    <span className="text-xs text-[#6C6C80]">
+                      (₹{car?.dailyPrice || car?.pricePerDay || 0}/day)
                     </span>
                   </div>
                 </div>
@@ -199,7 +233,7 @@ export default function MyBookingsPage() {
                     variant="outline"
                     className={
                       booking.paymentStatus === 'paid'
-                        ? 'border-green-500 text-green-700'
+                        ? 'border-[#00D09C] text-[#00B386] bg-[#E6FFF9]'
                         : 'border-yellow-500 text-yellow-700'
                     }
                   >
@@ -224,7 +258,7 @@ export default function MyBookingsPage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-[#00D09C] hover:bg-[#00B386] text-white"
                       onClick={() => handleStatusChange(booking._id, 'confirmed')}
                     >
                       Confirm
@@ -232,6 +266,7 @@ export default function MyBookingsPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      className="border-[#FF4444] text-[#FF4444] hover:bg-[#FFE5E5]"
                       onClick={() => handleStatusChange(booking._id, 'cancelled')}
                     >
                       Decline
@@ -242,7 +277,7 @@ export default function MyBookingsPage() {
                 {!showRenter && booking.status === 'pending' && booking.paymentStatus === 'pending' && (
                   <Button
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-[#00D09C] hover:bg-[#00B386] text-white"
                     onClick={async () => {
                       try {
                         const res = await fetch('/api/payments', {
@@ -280,12 +315,12 @@ export default function MyBookingsPage() {
                   </Button>
                 )}
                 <Link href={`/bookings/${booking._id}`}>
-                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                  <Button size="sm" className="bg-[#00D09C] hover:bg-[#00B386] text-white">
                     View Details
                   </Button>
                 </Link>
-                <Link href={`/cars/${booking.car._id}`}>
-                  <Button size="sm" variant="outline">
+                <Link href={`/cars/${car?._id || ''}`}>
+                  <Button size="sm" variant="outline" className="border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]">
                     View Car
                   </Button>
                 </Link>
@@ -299,8 +334,18 @@ export default function MyBookingsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Loader size="lg" text="Loading your bookings..." />
+      <div className="min-h-screen bg-[#F7F7FA] py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <Skeleton className="h-10 w-64 mb-2" />
+            <Skeleton className="h-6 w-96" />
+          </div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <BookingCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -311,81 +356,81 @@ export default function MyBookingsPage() {
   const filtered = filteredBookings(currentBookings);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+    <div className="min-h-screen bg-[#F7F7FA] py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+          <h1 className="text-3xl font-bold text-[#1A1A2E] sm:text-4xl">
             My Bookings
           </h1>
-          <p className="mt-2 text-base text-gray-600 sm:text-lg">
+          <p className="mt-2 text-base text-[#6C6C80] sm:text-lg">
             Manage your car rentals and bookings
           </p>
         </div>
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Bookings</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Total Bookings</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">{stats.totalBookings}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Calendar className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-[#E6F3FF] rounded-lg">
+                  <Calendar className="h-6 w-6 text-[#2196F3]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Upcoming</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.upcomingBookings}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Upcoming</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">{stats.upcomingBookings}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-[#E6FFF9] rounded-lg">
+                  <Clock className="h-6 w-6 text-[#00D09C]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.completedBookings}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Completed</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">{stats.completedBookings}</p>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-purple-600" />
+                <div className="p-3 bg-[#E6F3FF] rounded-lg">
+                  <CheckCircle className="h-6 w-6 text-[#2196F3]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Spent</p>
-                  <p className="text-2xl font-bold text-gray-900">₹{stats.totalSpent.toFixed(2)}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Total Spent</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">₹{stats.totalSpent.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <IndianRupee className="h-6 w-6 text-orange-600" />
+                <div className="p-3 bg-[#E6FFF9] rounded-lg">
+                  <IndianRupee className="h-6 w-6 text-[#00D09C]" />
                 </div>
               </div>
             </CardContent>
           </Card>
           {session.user.role === 'owner' && (
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Earned</p>
-                    <p className="text-2xl font-bold text-gray-900">₹{stats.totalEarned.toFixed(2)}</p>
+                    <p className="text-sm text-[#6C6C80] mb-1">Total Earned</p>
+                    <p className="text-2xl font-bold text-[#1A1A2E]">₹{stats.totalEarned.toFixed(2)}</p>
                   </div>
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <IndianRupee className="h-6 w-6 text-green-600" />
+                  <div className="p-3 bg-[#E6FFF9] rounded-lg">
+                    <IndianRupee className="h-6 w-6 text-[#00D09C]" />
                   </div>
                 </div>
               </CardContent>
@@ -406,7 +451,7 @@ export default function MyBookingsPage() {
             {/* Search and Filter */}
             <div className="flex flex-col sm:flex-row gap-4 flex-1 sm:justify-end">
               <div className="relative flex-1 sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6C6C80]" />
                 <Input
                   placeholder="Search bookings..."
                   value={searchQuery}
@@ -415,7 +460,7 @@ export default function MyBookingsPage() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-gray-400" />
+                <Filter className="h-5 w-5 text-[#6C6C80]" />
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by status" />
@@ -438,21 +483,21 @@ export default function MyBookingsPage() {
                 {filtered.map((booking) => renderBookingCard(booking, false))}
               </div>
             ) : (
-              <Card className="shadow-lg">
+              <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
                 <CardContent className="py-16 text-center">
-                  <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                    <Car className="h-10 w-10 text-blue-600" />
+                  <div className="mx-auto mb-6 w-20 h-20 bg-[#E6FFF9] rounded-full flex items-center justify-center">
+                    <Car className="h-10 w-10 text-[#00D09C]" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-[#1A1A2E] mb-2">
                     {searchQuery || filterStatus !== 'all' ? 'No bookings found' : 'No rentals yet'}
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-[#6C6C80] mb-6">
                     {searchQuery || filterStatus !== 'all'
                       ? 'Try adjusting your search or filters'
                       : 'Start exploring and book your first car'}
                   </p>
                   {!searchQuery && filterStatus === 'all' && (
-                    <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Button asChild className="bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300">
                       <Link href="/cars">Browse Cars</Link>
                     </Button>
                   )}
@@ -468,15 +513,15 @@ export default function MyBookingsPage() {
                   {filteredBookings(ownerBookings).map((booking) => renderBookingCard(booking, true))}
                 </div>
               ) : (
-                <Card className="shadow-lg">
+                <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
                   <CardContent className="py-16 text-center">
-                    <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                      <Calendar className="h-10 w-10 text-blue-600" />
+                    <div className="mx-auto mb-6 w-20 h-20 bg-[#E6FFF9] rounded-full flex items-center justify-center">
+                      <Calendar className="h-10 w-10 text-[#00D09C]" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    <h3 className="text-xl font-semibold text-[#1A1A2E] mb-2">
                       {searchQuery || filterStatus !== 'all' ? 'No bookings found' : 'No bookings yet'}
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-[#6C6C80]">
                       {searchQuery || filterStatus !== 'all'
                         ? 'Try adjusting your search or filters'
                         : 'Your cars haven\'t received any bookings yet'}

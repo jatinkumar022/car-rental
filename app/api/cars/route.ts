@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
 
     const query: CarQuery = {};
 
-    // Only filter by available status for public browsing (not when viewing owner's own cars)
+    // Only filter by active status for public browsing (not when viewing host's own cars)
     if (!ownerId) {
-      query.available = true;
+      query.status = 'active';
     }
 
     if (ownerId) {
-      query.owner = ownerId;
+      query.hostId = ownerId;
     }
 
     if (search) {
@@ -42,19 +42,24 @@ export async function GET(request: NextRequest) {
     if (type) query.type = type;
     if (transmission) query.transmission = transmission;
     if (fuelType) query.fuelType = fuelType;
-    if (location) query.location = { $regex: location, $options: 'i' };
+    if (location) {
+      query.$or = [
+        { locationCity: { $regex: location, $options: 'i' } },
+        { locationAddress: { $regex: location, $options: 'i' } },
+      ];
+    }
     
     // Handle price range
     if (minPrice || maxPrice) {
       const priceQuery: { $gte?: number; $lte?: number } = {};
       if (minPrice) priceQuery.$gte = parseFloat(minPrice);
       if (maxPrice) priceQuery.$lte = parseFloat(maxPrice);
-      query.pricePerDay = priceQuery;
+      query.dailyPrice = priceQuery;
     }
 
     const skip = (page - 1) * limit;
     const cars = await Car.find(query)
-      .populate('owner', 'name avatar')
+      .populate('hostId', 'firstName lastName profileImage')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -94,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     const car = await Car.create({
       ...body,
-      owner: session.user.id,
+      hostId: session.user.id,
     });
 
     return NextResponse.json({ car }, { status: 201 });

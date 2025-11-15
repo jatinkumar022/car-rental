@@ -3,7 +3,6 @@ import dbConnect from '@/lib/db';
 import Booking from '@/models/Booking';
 import Car from '@/models/Car';
 import { auth } from '@/lib/auth';
-import { PopulatedCar, getOwnerId } from '@/types/mongodb';
 
 export async function GET(
   _request: NextRequest,
@@ -25,51 +24,26 @@ export async function GET(
     }
 
     // Check if user is renter
-    const isRenter = booking.renter.toString() === session.user.id;
+    const isRenter = booking.renterId.toString() === session.user.id;
     
-    // Get car to check if user is owner
-    const car = await Car.findById(booking.car).populate('owner', 'name email avatar phone');
-    if (!car) {
-      return NextResponse.json({ error: 'Car not found' }, { status: 404 });
-    }
+    // Check if user is host
+    const isHost = booking.hostId.toString() === session.user.id;
 
-    // Check if user is owner
-    let carOwnerId: string;
-    if (typeof car.owner === 'object' && car.owner !== null && '_id' in car.owner) {
-      carOwnerId = car.owner._id.toString();
-    } else {
-      carOwnerId = String(car.owner);
-    }
-    const isOwner = carOwnerId === session.user.id;
-
-    if (!isOwner && !isRenter) {
+    if (!isHost && !isRenter) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Now populate all data
     const populatedBooking = await Booking.findById(id)
-      .populate('car', 'make model year images pricePerDay location type transmission fuelType seats')
-      .populate('renter', 'name email avatar phone');
+      .populate('carId', 'make model year images dailyPrice locationCity locationAddress transmission fuelType seatingCapacity')
+      .populate('renterId', 'firstName lastName email profileImage phone')
+      .populate('hostId', 'firstName lastName email profileImage phone');
 
     if (!populatedBooking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Convert to object and add owner
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const bookingObj: any = populatedBooking.toObject();
-    if (car.owner && typeof car.owner === 'object' && car.owner !== null && '_id' in car.owner) {
-      bookingObj.owner = car.owner;
-    } else if (car.owner) {
-      // Fetch owner if not populated
-      const User = (await import('@/models/User')).default;
-      const ownerUser = await User.findById(car.owner).select('name email avatar phone');
-      if (ownerUser) {
-        bookingObj.owner = ownerUser.toObject();
-      }
-    }
-
-    return NextResponse.json({ booking: bookingObj }, { status: 200 });
+    return NextResponse.json({ booking: populatedBooking }, { status: 200 });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json(
@@ -91,26 +65,16 @@ export async function PUT(
     }
 
     await dbConnect();
-    const booking = await Booking.findById(id).populate('car');
+    const booking = await Booking.findById(id);
 
-    if (!booking || !booking.car) {
+    if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Check if car is populated or just an ObjectId
-    const car = typeof booking.car === 'object' && '_id' in booking.car 
-      ? (booking.car as unknown as PopulatedCar)
-      : null;
-    
-    if (!car) {
-      return NextResponse.json({ error: 'Car information not available' }, { status: 404 });
-    }
+    const isHost = booking.hostId.toString() === session.user.id;
+    const isRenter = booking.renterId.toString() === session.user.id;
 
-    const carOwnerId = getOwnerId(car.owner);
-    const isOwner = carOwnerId === session.user.id;
-    const isRenter = booking.renter.toString() === session.user.id;
-
-    if (!isOwner && !isRenter) {
+    if (!isHost && !isRenter) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -119,7 +83,7 @@ export async function PUT(
       id,
       body,
       { new: true, runValidators: true }
-    ).populate('car', 'make model images pricePerDay').populate('renter', 'name email avatar');
+    ).populate('carId', 'make model images dailyPrice').populate('renterId', 'firstName lastName email profileImage').populate('hostId', 'firstName lastName email profileImage');
 
     return NextResponse.json({ booking: updatedBooking }, { status: 200 });
   } catch (error) {

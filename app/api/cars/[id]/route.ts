@@ -10,7 +10,7 @@ export async function GET(
   try {
     const { id } = await params;
     await dbConnect();
-    const car = await Car.findById(id).populate('owner', 'name avatar email phone');
+    const car = await Car.findById(id).populate('hostId', 'firstName lastName profileImage email phone');
 
     if (!car) {
       return NextResponse.json({ error: 'Car not found' }, { status: 404 });
@@ -44,7 +44,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Car not found' }, { status: 404 });
     }
 
-    if (!session.user || car.owner.toString() !== session.user.id) {
+    if (!session.user || car.hostId.toString() !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -82,7 +82,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Car not found' }, { status: 404 });
     }
 
-    if (!session.user || car.owner.toString() !== session.user.id) {
+    if (!session.user || car.hostId.toString() !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

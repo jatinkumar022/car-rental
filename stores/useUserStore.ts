@@ -3,11 +3,15 @@ import { toast } from 'sonner';
 
 interface UserProfile {
   _id: string;
-  name: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string; // Fallback for backward compatibility
   email: string;
   phone?: string;
-  avatar?: string;
-  role: string;
+  profileImage?: string;
+  avatar?: string; // Fallback for backward compatibility
+  role?: string;
+  userType?: string;
 }
 
 interface UserState {

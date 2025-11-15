@@ -3,15 +3,13 @@ import { Car } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-16">
+    <footer className="bg-[#1A1A2E] text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Car className="h-6 w-6 text-white" />
-              </div>
+              <Car className="h-8 w-8 text-[#00D09C]" />
               <span className="text-xl font-bold text-white">Carido</span>
             </Link>
             <p className="text-gray-400">Your trusted platform for car rentals and listings.</p>
@@ -22,23 +20,18 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/cars" className="hover:text-white transition">
-                  Browse Cars
+                <Link href="/about" className="text-gray-400 hover:text-[#00D09C] transition">
+                  About
                 </Link>
               </li>
               <li>
-                <Link href="/my-cars" className="hover:text-white transition">
-                  My Cars
+                <Link href="/my-cars" className="text-gray-400 hover:text-[#00D09C] transition">
+                  List Your Car
                 </Link>
               </li>
               <li>
-                <Link href="/my-bookings" className="hover:text-white transition">
-                  My Bookings
-                </Link>
-              </li>
-              <li>
-                <Link href="/auth/register" className="hover:text-white transition">
-                  Become an Owner
+                <Link href="/my-cars" className="text-gray-400 hover:text-[#00D09C] transition">
+                  Become a Host
                 </Link>
               </li>
             </ul>
@@ -49,40 +42,40 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-4">Support</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="#" className="hover:text-white transition">
+                <Link href="/help" className="text-gray-400 hover:text-[#00D09C] transition">
                   Help Center
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-white transition">
-                  Safety
+                <Link href="/help" className="text-gray-400 hover:text-[#00D09C] transition">
+                  FAQ
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-white transition">
+                <Link href="/help" className="text-gray-400 hover:text-[#00D09C] transition">
                   Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/help" className="text-gray-400 hover:text-[#00D09C] transition">
+                  Safety
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Explore */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Legal</h3>
+            <h3 className="text-white font-semibold mb-4">Explore</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="#" className="hover:text-white transition">
-                  Privacy Policy
+                <Link href="/cars" className="text-gray-400 hover:text-[#00D09C] transition">
+                  Browse Cars
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-white transition">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-white transition">
-                  Cookie Policy
+                <Link href="/cars" className="text-gray-400 hover:text-[#00D09C] transition">
+                  Popular Cities
                 </Link>
               </li>
             </ul>

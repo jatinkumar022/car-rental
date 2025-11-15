@@ -51,10 +51,32 @@
   --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.55 0.22 280);
-  --primary-foreground: oklch(0.99 0 0);
+
+  /* Design System Colors - Primary Green (#00D09C) */
+  --primary: #00D09C;
+  --primary-foreground: #FFFFFF;
+  --primary-dark: #00B386;
+  --primary-light: #E6FFF9;
+
+  /* Secondary Colors */
   --secondary: oklch(0.96 0 0);
   --secondary-foreground: oklch(0.15 0 0);
+
+  /* Text Colors */
+  --text-primary: #1A1A2E;
+  --text-secondary: #2D2D44;
+  --text-tertiary: #6C6C80;
+
+  /* Background Colors */
+  --bg-light: #F7F7FA;
+  --bg-border: #E5E5EA;
+
+  /* Accent Colors */
+  --success: #00C853;
+  --warning: #FFB800;
+  --error: #FF4444;
+  --info: #2196F3;
+
   --muted: oklch(0.96 0 0);
   --muted-foreground: oklch(0.5 0 0);
   --accent: oklch(0.95 0.02 280);
@@ -62,7 +84,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.9 0 0);
   --input: oklch(0.95 0 0);
-  --ring: oklch(0.55 0.22 280);
+  --ring: #00D09C;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -119,6 +141,48 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif;
+  }
+
+  /* Design System Typography */
+  h1 {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+  }
+
+  h2 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+
+  h3 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    color: var(--text-primary);
+  }
+
+  h4 {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    color: var(--text-primary);
+  }
+
+  h5 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  h6 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
   }
 }
 

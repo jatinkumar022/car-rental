@@ -38,17 +38,23 @@ interface Car {
   make: string;
   model: string;
   year: number;
-  images: string[];
-  pricePerDay: number;
-  location: string;
+  images: Array<{ url: string }> | string[];
+  dailyPrice: number;
+  pricePerDay?: number; // Fallback
+  locationCity?: string;
+  locationAddress?: string;
+  location?: string; // Fallback
   rating: number;
-  totalReviews: number;
-  seats: number;
+  totalTrips: number;
+  totalReviews?: number; // Fallback
+  seatingCapacity: number;
+  seats?: number; // Fallback
   fuelType: string;
   transmission: string;
-  available: boolean;
+  status: string;
+  available?: boolean; // Fallback
   owner?: string;
-  type: string;
+  type?: string;
   description: string;
   features: string[];
 }
@@ -131,12 +137,14 @@ export default function MyCarsPage() {
     const success = await createCar({
       ...carForm,
       year: parseInt(carForm.year) || new Date().getFullYear(),
-      seats: parseInt(carForm.seats) || 5,
+      seatingCapacity: parseInt(carForm.seats) || 5,
       features: carForm.features
         .split(',')
         .map((f) => f.trim())
         .filter(Boolean),
-      pricePerDay: parseFloat(carForm.pricePerDay),
+      dailyPrice: parseFloat(carForm.pricePerDay),
+      locationCity: carForm.location,
+      status: 'pending',
     });
 
     if (success) {
@@ -173,7 +181,7 @@ export default function MyCarsPage() {
   };
 
   const handleToggleAvailability = async (carId: string, currentStatus: boolean) => {
-    const success = await updateCar(carId, { available: !currentStatus });
+    const success = await updateCar(carId, { status: currentStatus ? 'inactive' : 'active' });
     if (success && session?.user?.id) {
       fetchCars({ ownerId: session.user.id });
       fetchStats();
@@ -184,12 +192,14 @@ export default function MyCarsPage() {
     const matchesSearch = 
       car.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
       car.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      car.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (car.locationCity?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+      (car.locationAddress?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+      (car.location?.toLowerCase().includes(searchQuery.toLowerCase()) || false);
     
     const matchesFilter = 
       filterStatus === 'all' ||
-      (filterStatus === 'available' && car.available) ||
-      (filterStatus === 'unavailable' && !car.available);
+      (filterStatus === 'available' && car.status === 'active') ||
+      (filterStatus === 'unavailable' && car.status !== 'active');
 
     return matchesSearch && matchesFilter;
   });
@@ -205,21 +215,21 @@ export default function MyCarsPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+    <div className="min-h-screen bg-[#F7F7FA] py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              <h1 className="text-3xl font-bold text-[#1A1A2E] sm:text-4xl">
                 My Cars
               </h1>
-              <p className="mt-2 text-base text-gray-600 sm:text-lg">
+              <p className="mt-2 text-base text-[#6C6C80] sm:text-lg">
                 Manage your car listings and track performance
               </p>
             </div>
             <Dialog open={addCarOpen} onOpenChange={setAddCarOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button className="bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
                   <Plus className="mr-2 h-4 w-4" />
                   Add New Car
                 </Button>
@@ -455,7 +465,7 @@ export default function MyCarsPage() {
                 <DialogFooter>
                   <Button
                     onClick={handleAddCar}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Add Car
                   </Button>
@@ -467,54 +477,54 @@ export default function MyCarsPage() {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Cars</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalCars}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Total Cars</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">{stats.totalCars}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Car className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-[#E6F3FF] rounded-lg">
+                  <Car className="h-6 w-6 text-[#2196F3]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Available</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.availableCars}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Available</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">{stats.availableCars}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-[#E6FFF9] rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-[#00D09C]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Earnings</p>
-                  <p className="text-2xl font-bold text-gray-900">₹{stats.totalEarnings.toFixed(2)}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Total Earnings</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">₹{stats.totalEarnings.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <IndianRupee className="h-6 w-6 text-purple-600" />
+                <div className="p-3 bg-[#E6FFF9] rounded-lg">
+                  <IndianRupee className="h-6 w-6 text-[#00D09C]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Bookings</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+                  <p className="text-sm text-[#6C6C80] mb-1">Total Bookings</p>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">{stats.totalBookings}</p>
                 </div>
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <Calendar className="h-6 w-6 text-orange-600" />
+                <div className="p-3 bg-[#E6F3FF] rounded-lg">
+                  <Calendar className="h-6 w-6 text-[#2196F3]" />
                 </div>
               </div>
             </CardContent>
@@ -524,7 +534,7 @@ export default function MyCarsPage() {
         {/* Search and Filter */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6C6C80]" />
             <Input
               placeholder="Search by make, model, or location..."
               value={searchQuery}
@@ -533,7 +543,7 @@ export default function MyCarsPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-gray-400" />
+            <Filter className="h-5 w-5 text-[#6C6C80]" />
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
@@ -550,79 +560,87 @@ export default function MyCarsPage() {
         {/* Cars Grid */}
         {filteredCars.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCars.map((car) => (
-              <Card key={car._id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                <Link href={`/cars/${car._id}`}>
-                  <div className="relative h-48 w-full">
-                    <Image
-                      src={car.images[0] || '/placeholder.svg'}
-                      alt={`${car.make} ${car.model}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge className={car.available ? 'bg-green-500' : 'bg-red-500'}>
-                        {car.available ? 'Available' : 'Unavailable'}
-                      </Badge>
-                    </div>
-                  </div>
-                </Link>
-                <CardContent className="p-4">
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {car.make} {car.model} {car.year}
-                    </h3>
-                    <p className="text-sm text-gray-600">{car.location}</p>
-                  </div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">₹{car.pricePerDay}</p>
-                      <p className="text-xs text-gray-500">per day</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{car.totalReviews} reviews</span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <span className="text-sm font-semibold">{car.rating > 0 ? car.rating.toFixed(1) : 'New'}</span>
-                        <span className="text-xs text-gray-500">rating</span>
+            {filteredCars.map((car) => {
+              const carImages = Array.isArray(car.images) && car.images.length > 0
+                ? (typeof car.images[0] === 'string'
+                    ? car.images as string[]
+                    : (car.images as Array<{ url: string }>).map(img => img.url))
+                : ['/placeholder.svg'];
+
+              return (
+                <Card key={car._id} className="overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-shadow">
+                  <Link href={`/cars/${car._id}`}>
+                    <div className="relative h-48 w-full">
+                      <Image
+                        src={carImages[0] || '/placeholder.svg'}
+                        alt={`${car.make} ${car.model}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge className={car.status === 'active' ? 'bg-[#00D09C] text-white' : 'bg-[#FF4444] text-white'}>
+                          {car.status === 'active' ? 'Available' : 'Unavailable'}
+                        </Badge>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleToggleAvailability(car._id, car.available)}
-                      className="flex-1"
-                    >
-                      {car.available ? 'Mark Unavailable' : 'Mark Available'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteCar(car._id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </Link>
+                  <CardContent className="p-4">
+                    <div className="mb-3">
+                      <h3 className="text-lg font-semibold text-[#1A1A2E]">
+                        {car.make} {car.model} {car.year}
+                      </h3>
+                      <p className="text-sm text-[#6C6C80]">{car.locationCity || car.locationAddress || car.location || 'Location not specified'}</p>
+                    </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-2xl font-bold text-[#00D09C]">₹{car.dailyPrice || car.pricePerDay || 0}</p>
+                        <p className="text-xs text-[#6C6C80]">per day</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-4 w-4 text-[#6C6C80]" />
+                          <span className="text-sm text-[#6C6C80]">{car.totalTrips || car.totalReviews || 0} trips</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-sm font-semibold text-[#1A1A2E]">{car.rating > 0 ? car.rating.toFixed(1) : 'New'}</span>
+                          <span className="text-xs text-[#6C6C80]">rating</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggleAvailability(car._id, car.status === 'active')}
+                        className="flex-1 border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]"
+                      >
+                        {car.status === 'active' ? 'Mark Unavailable' : 'Mark Available'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteCar(car._id)}
+                        className="border-[#FF4444] text-[#FF4444] hover:bg-[#FFE5E5]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : (
-          <Card className="shadow-lg">
+          <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="py-16 text-center">
-              <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                <Car className="h-10 w-10 text-blue-600" />
+              <div className="mx-auto mb-6 w-20 h-20 bg-[#E6FFF9] rounded-full flex items-center justify-center">
+                <Car className="h-10 w-10 text-[#00D09C]" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-[#1A1A2E] mb-2">
                 {searchQuery || filterStatus !== 'all' ? 'No cars found' : 'No cars listed yet'}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-[#6C6C80] mb-6">
                 {searchQuery || filterStatus !== 'all' 
                   ? 'Try adjusting your search or filters'
                   : 'Start earning by listing your first car'}
@@ -630,7 +648,7 @@ export default function MyCarsPage() {
               {!searchQuery && filterStatus === 'all' && (
                 <Button
                   onClick={() => setAddCarOpen(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   Add Your First Car
                 </Button>

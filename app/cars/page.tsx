@@ -13,8 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import CarCard from '@/components/CarCard';
+import CarCardSkeleton from '@/components/CarCardSkeleton';
 import Loader from '@/components/Loader';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCarStore } from '@/stores/useCarStore';
 
 function CarsPageContent() {
@@ -57,20 +59,20 @@ function CarsPageContent() {
   const hasActiveFilters = Object.values(localFilters).some((v) => v);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+    <div className="min-h-screen bg-[#F7F7FA] py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-2">
+          <h1 className="text-3xl font-bold text-[#1A1A2E] sm:text-4xl mb-2">
             Browse Cars
           </h1>
-          <p className="text-gray-600">
+          <p className="text-[#6C6C80]">
             Find your perfect ride from our collection
           </p>
         </div>
 
         {/* Enhanced Search and Filter Bar */}
         <div className="mb-6 space-y-4">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-6">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative flex-1">
@@ -86,13 +88,13 @@ function CarsPageContent() {
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
-                  className="sm:w-auto h-12"
+                  className="sm:w-auto h-12 border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]"
                 >
                   <Filter className="mr-2 h-4 w-4" />
                   Filters
                 </Button>
                 {hasActiveFilters && (
-                  <Button variant="ghost" onClick={clearFilters} className="sm:w-auto h-12">
+                  <Button variant="ghost" onClick={clearFilters} className="sm:w-auto h-12 text-[#6C6C80] hover:text-[#00D09C]">
                     <X className="mr-2 h-4 w-4" />
                     Clear
                   </Button>
@@ -104,7 +106,7 @@ function CarsPageContent() {
                 <div className="pt-4 border-t">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">Type</label>
+                      <label className="mb-2 block text-sm font-medium text-[#2D2D44]">Type</label>
                       <Select
                         value={localFilters.type}
                         onValueChange={(value) => updateFilter('type', value)}
@@ -124,7 +126,7 @@ function CarsPageContent() {
                       </Select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <label className="mb-2 block text-sm font-medium text-[#2D2D44]">
                         Transmission
                       </label>
                       <Select
@@ -142,7 +144,7 @@ function CarsPageContent() {
                       </Select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">Fuel Type</label>
+                      <label className="mb-2 block text-sm font-medium text-[#2D2D44]">Fuel Type</label>
                       <Select
                         value={localFilters.fuelType}
                         onValueChange={(value) => updateFilter('fuelType', value)}
@@ -160,7 +162,7 @@ function CarsPageContent() {
                       </Select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">Location</label>
+                      <label className="mb-2 block text-sm font-medium text-[#2D2D44]">Location</label>
                       <div className="flex items-center space-x-2 border border-gray-300 rounded-lg px-4 h-11">
                         <MapPin className="w-5 h-5 text-gray-400" />
                         <Input
@@ -173,7 +175,7 @@ function CarsPageContent() {
                       </div>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">Min Price</label>
+                      <label className="mb-2 block text-sm font-medium text-[#2D2D44]">Min Price</label>
                       <Input
                         type="number"
                         placeholder="0"
@@ -183,7 +185,7 @@ function CarsPageContent() {
                       />
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">Max Price</label>
+                      <label className="mb-2 block text-sm font-medium text-[#2D2D44]">Max Price</label>
                       <Input
                         type="number"
                         placeholder="1000"
@@ -201,10 +203,19 @@ function CarsPageContent() {
 
         {/* Results */}
         {loading ? (
-          <Loader fullHeight text="Loading cars..." />
+          <>
+            <div className="mb-4 text-sm text-[#6C6C80]">
+              <Skeleton className="h-5 w-32" />
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <CarCardSkeleton key={i} />
+              ))}
+            </div>
+          </>
         ) : cars.length > 0 ? (
           <>
-            <div className="mb-4 text-sm text-gray-600">
+            <div className="mb-4 text-sm text-[#6C6C80]">
               Found {cars.length} {cars.length === 1 ? 'car' : 'cars'}
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -216,9 +227,9 @@ function CarsPageContent() {
         ) : (
           <Card className="py-12 text-center">
             <div className="max-w-md mx-auto">
-              <p className="text-gray-600 mb-4">No cars found matching your criteria.</p>
+              <p className="text-[#6C6C80] mb-4">No cars found matching your criteria.</p>
               {hasActiveFilters && (
-                <Button onClick={clearFilters} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                <Button onClick={clearFilters} className="bg-[#00D09C] hover:bg-[#00B386] text-white">
                   Clear Filters
                 </Button>
               )}
@@ -234,13 +245,13 @@ export default function CarsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+        <div className="min-h-screen bg-[#F7F7FA] py-8">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-2">
+              <h1 className="text-3xl font-bold text-[#1A1A2E] sm:text-4xl mb-2">
                 Browse Cars
               </h1>
-              <p className="text-gray-600">
+              <p className="text-[#6C6C80]">
                 Find your perfect ride from our collection
               </p>
             </div>

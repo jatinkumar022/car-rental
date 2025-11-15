@@ -32,37 +32,49 @@ import { useBookingStore } from '@/stores/useBookingStore';
 
 interface Booking {
   _id: string;
-  car: {
+  carId?: {
     _id: string;
     make: string;
     model: string;
     year: number;
-    images: string[];
-    pricePerDay: number;
-    location: string;
-    type: string;
+    images: Array<{ url: string }> | string[];
+    dailyPrice: number;
+    locationCity?: string;
+    locationAddress?: string;
     transmission: string;
     fuelType: string;
-    seats: number;
+    seatingCapacity: number;
   };
-  renter?: {
+  car?: any; // Fallback for old structure
+  renterId?: {
     _id: string;
-    name: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
-    avatar?: string;
+    profileImage?: string;
     phone?: string;
   };
-  owner?: {
+  renter?: any; // Fallback
+  hostId?: {
     _id: string;
-    name: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
-    avatar?: string;
+    profileImage?: string;
     phone?: string;
   };
+  owner?: any; // Fallback
   startDate: string;
   endDate: string;
   totalDays: number;
-  totalPrice: number;
+  totalAmount: number;
+  totalPrice?: number; // Fallback
+  dailyRate: number;
+  subtotal: number;
+  serviceFee: number;
+  insuranceFee: number;
+  gst: number;
+  discount: number;
   status: string;
   paymentStatus: string;
   createdAt: string;
@@ -107,15 +119,17 @@ export default function BookingDetailsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-[#E6FFF9] text-[#00B386] border-[#00D09C]';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-[#FFE5E5] text-[#FF4444] border-[#FF4444]';
       case 'completed':
         return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'ongoing':
+        return 'bg-[#E6F3FF] text-[#2196F3] border-[#2196F3]';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-[#F7F7FA] text-[#6C6C80] border-[#E5E5EA]';
     }
   };
 
@@ -185,85 +199,107 @@ export default function BookingDetailsPage() {
     return getId(booking.car);
   };
 
-  const isOwner = booking.owner && getId(booking.owner) === session?.user?.id;
-  const isRenter = booking.renter && getId(booking.renter) === session?.user?.id;
+  const car = booking.carId || booking.car;
+  const renter = booking.renterId || booking.renter;
+  const host = booking.hostId || booking.owner;
+  const totalAmount = booking.totalAmount || booking.totalPrice || 0;
+  
+  // Handle images
+  const carImages = car?.images 
+    ? (typeof car.images[0] === 'string' 
+        ? car.images as string[]
+        : (car.images as Array<{ url: string }>).map(img => img.url))
+    : ['/placeholder.svg'];
+
+  const renterName = renter 
+    ? (renter.firstName && renter.lastName 
+        ? `${renter.firstName} ${renter.lastName}` 
+        : renter.name || renter.email)
+    : 'Unknown';
+
+  const hostName = host
+    ? (host.firstName && host.lastName
+        ? `${host.firstName} ${host.lastName}`
+        : host.name || host.email)
+    : 'Unknown';
+
+  const isOwner = host && getId(host) === session?.user?.id;
+  const isRenter = renter && getId(renter) === session?.user?.id;
   const isUpcoming = new Date(booking.startDate) > new Date() && booking.status !== 'cancelled';
   const isPast = new Date(booking.endDate) < new Date();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+    <div className="min-h-screen bg-[#F7F7FA] py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
         {/* Header */}
         <div className="mb-6">
           <Link href="/my-bookings">
-            <Button variant="ghost" className="mb-4">
+            <Button variant="ghost" className="mb-4 text-[#6C6C80] hover:text-[#00D09C]">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Bookings
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Booking Details</h1>
-          <p className="text-gray-600 mt-2">Booking ID: {booking._id}</p>
+          <h1 className="text-3xl font-bold text-[#1A1A2E]">Booking Details</h1>
+          <p className="text-[#6C6C80] mt-2">Booking ID: {booking._id}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Car Information */}
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-[#1A1A2E]">
                   <Car className="h-5 w-5" />
                   Car Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-6">
-                  {booking.car && typeof booking.car === 'object' && 'make' in booking.car ? (
+                  {car && typeof car === 'object' && 'make' in car ? (
                     <>
                       <div className="relative h-48 w-full sm:w-64 rounded-lg overflow-hidden">
                         <Image
-                          src={booking.car.images?.[0] || '/placeholder.svg'}
-                          alt={`${booking.car.make || ''} ${booking.car.model || ''}`}
+                          src={carImages[0] || '/placeholder.svg'}
+                          alt={`${car.make || ''} ${car.model || ''}`}
                           fill
                           className="object-cover"
                           sizes="(max-width: 640px) 100vw, 256px"
                         />
                       </div>
                       <div className="flex-1">
-                        <Link href={`/cars/${getCarId() || ''}`}>
-                          <h2 className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition mb-2">
-                            {booking.car.make} {booking.car.model} {booking.car.year}
+                        <Link href={`/cars/${car._id || getCarId() || ''}`}>
+                          <h2 className="text-2xl font-bold text-[#1A1A2E] hover:text-[#00D09C] transition mb-2">
+                            {car.make} {car.model} {car.year}
                           </h2>
                         </Link>
-                        <div className="space-y-2 text-sm text-gray-600">
+                        <div className="space-y-2 text-sm text-[#6C6C80]">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
-                            <span>{booking.car.location}</span>
+                            <span>{car.locationCity || car.locationAddress || car.location || 'Location not specified'}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Car className="h-4 w-4" />
-                            <span className="capitalize">{booking.car.type}</span>
+                            <span className="capitalize">{car.transmission}</span>
                             <span className="mx-2">•</span>
-                            <span className="capitalize">{booking.car.transmission}</span>
+                            <span className="capitalize">{car.fuelType}</span>
                             <span className="mx-2">•</span>
-                            <span className="capitalize">{booking.car.fuelType}</span>
-                            <span className="mx-2">•</span>
-                            <span>{booking.car.seats} Seats</span>
+                            <span>{car.seatingCapacity || car.seats} Seats</span>
                           </div>
                         </div>
                       </div>
                     </>
                   ) : (
-                    <p className="text-gray-600">Car information loading...</p>
+                    <p className="text-[#6C6C80]">Car information loading...</p>
                   )}
                 </div>
               </CardContent>
             </Card>
 
             {/* Booking Dates */}
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-[#1A1A2E]">
                   <Calendar className="h-5 w-5" />
                   Booking Dates
                 </CardTitle>
@@ -271,27 +307,31 @@ export default function BookingDetailsPage() {
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Start Date</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-sm text-[#6C6C80] mb-1">Start Date</p>
+                    <p className="text-lg font-semibold text-[#1A1A2E]">
                       {format(new Date(booking.startDate), 'EEEE, MMMM dd, yyyy')}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(booking.startDate), 'hh:mm a')}
-                    </p>
+                    {booking.pickupTime && (
+                      <p className="text-sm text-[#6C6C80]">
+                        Pickup: {booking.pickupTime}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">End Date</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-sm text-[#6C6C80] mb-1">End Date</p>
+                    <p className="text-lg font-semibold text-[#1A1A2E]">
                       {format(new Date(booking.endDate), 'EEEE, MMMM dd, yyyy')}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(booking.endDate), 'hh:mm a')}
-                    </p>
+                    {booking.returnTime && (
+                      <p className="text-sm text-[#6C6C80]">
+                        Return: {booking.returnTime}
+                      </p>
+                    )}
                   </div>
-                  <div className="sm:col-span-2 pt-4 border-t">
+                  <div className="sm:col-span-2 pt-4 border-t border-[#E5E5EA]">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600">Total Duration</p>
-                      <p className="text-lg font-semibold text-gray-900">
+                      <p className="text-sm text-[#6C6C80]">Total Duration</p>
+                      <p className="text-lg font-semibold text-[#1A1A2E]">
                         {booking.totalDays} {booking.totalDays === 1 ? 'day' : 'days'}
                       </p>
                     </div>
@@ -301,45 +341,45 @@ export default function BookingDetailsPage() {
             </Card>
 
             {/* Contact Information */}
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-[#1A1A2E]">
                   <User className="h-5 w-5" />
                   Contact Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {isOwner && booking.renter && (
+                {isOwner && renter && (
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">Renter</p>
-                      <p className="text-lg font-semibold text-gray-900">{booking.renter.name}</p>
-                      <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                      <p className="text-sm text-[#6C6C80] mb-1">Renter</p>
+                      <p className="text-lg font-semibold text-[#1A1A2E]">{renterName}</p>
+                      <div className="flex items-center gap-2 mt-2 text-sm text-[#6C6C80]">
                         <Mail className="h-4 w-4" />
-                        <span>{booking.renter.email}</span>
+                        <span>{renter.email}</span>
                       </div>
-                      {booking.renter.phone && (
-                        <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                      {renter.phone && (
+                        <div className="flex items-center gap-2 mt-1 text-sm text-[#6C6C80]">
                           <Phone className="h-4 w-4" />
-                          <span>{booking.renter.phone}</span>
+                          <span>{renter.phone}</span>
                         </div>
                       )}
                     </div>
                   </div>
                 )}
-                {isRenter && booking.owner && (
+                {isRenter && host && (
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">Car Owner</p>
-                      <p className="text-lg font-semibold text-gray-900">{booking.owner.name}</p>
-                      <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                      <p className="text-sm text-[#6C6C80] mb-1">Host</p>
+                      <p className="text-lg font-semibold text-[#1A1A2E]">{hostName}</p>
+                      <div className="flex items-center gap-2 mt-2 text-sm text-[#6C6C80]">
                         <Mail className="h-4 w-4" />
-                        <span>{booking.owner.email}</span>
+                        <span>{host.email}</span>
                       </div>
-                      {booking.owner.phone && (
-                        <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                      {host.phone && (
+                        <div className="flex items-center gap-2 mt-1 text-sm text-[#6C6C80]">
                           <Phone className="h-4 w-4" />
-                          <span>{booking.owner.phone}</span>
+                          <span>{host.phone}</span>
                         </div>
                       )}
                     </div>
@@ -352,16 +392,16 @@ export default function BookingDetailsPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Status & Payment */}
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-[#1A1A2E]">
                   <FileText className="h-5 w-5" />
                   Status
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Booking Status</p>
+                  <p className="text-sm text-[#6C6C80] mb-2">Booking Status</p>
                   <Badge className={`${getStatusColor(booking.status)} flex items-center gap-1 w-fit`}>
                     {getStatusIcon(booking.status)}
                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
@@ -369,12 +409,12 @@ export default function BookingDetailsPage() {
                 </div>
                 <Separator />
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Payment Status</p>
+                  <p className="text-sm text-[#6C6C80] mb-2">Payment Status</p>
                   <Badge
                     variant="outline"
                     className={
                       booking.paymentStatus === 'paid'
-                        ? 'border-green-500 text-green-700 w-fit'
+                        ? 'border-[#00D09C] text-[#00B386] bg-[#E6FFF9] w-fit'
                         : 'border-yellow-500 text-yellow-700 w-fit'
                     }
                   >
@@ -402,40 +442,73 @@ export default function BookingDetailsPage() {
             </Card>
 
             {/* Pricing */}
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-[#1A1A2E]">
                   <IndianRupee className="h-5 w-5" />
                   Pricing
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Price per day</span>
-                  <span className="font-semibold">₹{booking.car?.pricePerDay || 0}</span>
+                  <span className="text-[#6C6C80]">Daily rate</span>
+                  <span className="font-semibold text-[#1A1A2E]">₹{booking.dailyRate || car?.dailyPrice || 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total days</span>
-                  <span className="font-semibold">{booking.totalDays}</span>
+                  <span className="text-[#6C6C80]">Total days</span>
+                  <span className="font-semibold text-[#1A1A2E]">{booking.totalDays}</span>
                 </div>
+                {booking.subtotal && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#6C6C80]">Subtotal</span>
+                      <span className="font-semibold text-[#1A1A2E]">₹{booking.subtotal.toFixed(2)}</span>
+                    </div>
+                    {booking.serviceFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#6C6C80]">Service Fee</span>
+                        <span className="font-semibold text-[#1A1A2E]">₹{booking.serviceFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {booking.insuranceFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#6C6C80]">Insurance</span>
+                        <span className="font-semibold text-[#1A1A2E]">₹{booking.insuranceFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {booking.gst > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#6C6C80]">GST (18%)</span>
+                        <span className="font-semibold text-[#1A1A2E]">₹{booking.gst.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {booking.discount > 0 && (
+                      <div className="flex justify-between text-sm text-[#00D09C]">
+                        <span>Discount</span>
+                        <span className="font-semibold">-₹{booking.discount.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Total Amount</span>
-                  <span className="text-blue-600">₹{booking.totalPrice}</span>
+                  <span className="text-[#1A1A2E]">Total Amount</span>
+                  <span className="text-[#00D09C]">₹{totalAmount.toFixed(2)}</span>
                 </div>
               </CardContent>
             </Card>
 
             {/* Actions */}
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
-                <CardTitle>Actions</CardTitle>
+                <CardTitle className="text-[#1A1A2E]">Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {isOwner && booking.status === 'pending' && (
                   <>
                     <Button
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white"
                       onClick={() => handleStatusChange('confirmed')}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
@@ -443,7 +516,7 @@ export default function BookingDetailsPage() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full border-[#FF4444] text-[#FF4444] hover:bg-[#FFE5E5]"
                       onClick={() => handleStatusChange('cancelled')}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
@@ -453,7 +526,7 @@ export default function BookingDetailsPage() {
                 )}
                 {isRenter && booking.status === 'pending' && booking.paymentStatus === 'pending' && (
                   <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white"
                     onClick={handlePayment}
                   >
                     <CreditCard className="mr-2 h-4 w-4" />
@@ -463,7 +536,7 @@ export default function BookingDetailsPage() {
                 {isRenter && booking.status === 'pending' && (
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full border-[#FF4444] text-[#FF4444] hover:bg-[#FFE5E5]"
                     onClick={() => handleStatusChange('cancelled')}
                   >
                     <XCircle className="mr-2 h-4 w-4" />
@@ -471,7 +544,7 @@ export default function BookingDetailsPage() {
                   </Button>
                 )}
                 <Link href={`/cars/${getCarId() || ''}`} className="block">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]">
                     <Car className="mr-2 h-4 w-4" />
                     View Car Details
                   </Button>
@@ -480,14 +553,14 @@ export default function BookingDetailsPage() {
             </Card>
 
             {/* Booking Info */}
-            <Card className="shadow-lg">
+            <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
-                <CardTitle>Booking Information</CardTitle>
+                <CardTitle className="text-[#1A1A2E]">Booking Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div>
-                  <p className="text-gray-600">Booking Created</p>
-                  <p className="font-semibold">
+                  <p className="text-[#6C6C80]">Booking Created</p>
+                  <p className="font-semibold text-[#1A1A2E]">
                     {format(new Date(booking.createdAt), 'MMM dd, yyyy hh:mm a')}
                   </p>
                 </div>

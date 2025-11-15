@@ -36,12 +36,13 @@ export async function PUT(request: NextRequest) {
 
     await dbConnect();
     const body = await request.json();
-    const { name, phone, avatar } = body;
+    const { firstName, lastName, phone, profileImage } = body;
 
     const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
     if (phone !== undefined) updateData.phone = phone;
-    if (avatar !== undefined) updateData.avatar = avatar;
+    if (profileImage !== undefined) updateData.profileImage = profileImage;
 
     const user = await User.findByIdAndUpdate(
       session.user.id,

@@ -28,17 +28,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    if (booking.renter.toString() !== session.user!.id) {
+    if (booking.renterId.toString() !== session.user!.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // This is a placeholder for Razorpay integration
-    // In production, you would integrate with Razorpay here
+    // DUMMY PAYMENT - Always succeeds
+    const transactionId = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    
     const payment = await Payment.create({
-      booking: bookingId,
-      amount: booking.totalPrice,
-      status: 'completed', // In production, this would be set after Razorpay confirmation
-      transactionId: `razorpay_${Date.now()}`, // Placeholder
+      bookingId: bookingId,
+      userId: session.user!.id,
+      amount: booking.totalAmount,
+      paymentMethod: body.paymentMethod || 'card',
+      status: 'success', // Always success for dummy payment
+      transactionId: transactionId,
     });
 
     await Booking.findByIdAndUpdate(bookingId, {

@@ -13,6 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -20,10 +27,12 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    userType: 'renter',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,9 +57,11 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
+          userType: formData.userType,
         }),
       });
 
@@ -69,37 +80,72 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 px-4 py-12">
-      <Card className="w-full max-w-md shadow-2xl border-0">
+    <div className="flex min-h-screen items-center justify-center bg-[#F7F7FA] px-4 py-12">
+      <Card className="w-full max-w-md shadow-[0_4px_16px_rgba(0,0,0,0.12)] border-0">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100">
-            <Car className="h-8 w-8 text-blue-600" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E6FFF9]">
+            <Car className="h-8 w-8 text-[#00D09C]" />
           </div>
-          <CardTitle className="text-3xl font-bold text-gray-900">Create Account</CardTitle>
-          <CardDescription className="text-base">
+          <CardTitle className="text-3xl font-bold text-[#1A1A2E]">Create Account</CardTitle>
+          <CardDescription className="text-base text-[#6C6C80]">
             Sign up to start your car rental journey
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              <div className="rounded-lg bg-[#FFE5E5] border border-[#FF4444] p-3 text-sm text-[#FF4444]">
                 {error}
               </div>
             )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, firstName: e.target.value })
+                  }
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+              <Label htmlFor="userType">I want to</Label>
+              <Select
+                value={formData.userType}
+                onValueChange={(value: 'renter' | 'host' | 'both') =>
+                  setFormData({ ...formData, userType: value })
                 }
-                required
                 disabled={loading}
-              />
+              >
+                <SelectTrigger className="h-12 w-full border-[#E5E5EA] focus:border-[#00D09C] focus:ring-[#00D09C]">
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="renter">Rent Cars</SelectItem>
+                  <SelectItem value="host">List My Cars</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -147,7 +193,7 @@ export default function RegisterPage() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+              className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={loading}
             >
               {loading ? (
@@ -161,10 +207,10 @@ export default function RegisterPage() {
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Already have an account? </span>
+            <span className="text-[#6C6C80]">Already have an account? </span>
             <Link
               href="/auth/login"
-              className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition"
+              className="font-semibold text-[#00D09C] hover:text-[#00B386] hover:underline transition"
             >
               Sign in
             </Link>

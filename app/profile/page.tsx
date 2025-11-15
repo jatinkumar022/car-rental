@@ -19,25 +19,28 @@ export default function ProfilePage() {
   const { profile, loading, fetchProfile, updateProfile } = useUserStore();
   const [saving, setSaving] = useState(false);
   const [initialData, setInitialData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    avatar: '',
+    profileImage: '',
   });
   const [profileData, setProfileData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    avatar: '',
+    profileImage: '',
   });
   const [cropperOpen, setCropperOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState('');
 
   // Check if form is dirty
   const isDirty = 
-    profileData.name !== initialData.name ||
+    profileData.firstName !== initialData.firstName ||
+    profileData.lastName !== initialData.lastName ||
     profileData.phone !== initialData.phone ||
-    profileData.avatar !== initialData.avatar;
+    profileData.profileImage !== initialData.profileImage;
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -50,10 +53,11 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       const data = {
-        name: profile.name || '',
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
         email: profile.email || '',
         phone: profile.phone || '',
-        avatar: profile.avatar || '',
+        profileImage: profile.profileImage || '',
       };
       // Sync external state (Zustand store) to local form state
       // This is necessary to sync Zustand store data to local form state for editing
@@ -61,18 +65,20 @@ export default function ProfilePage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setInitialData((prev) => {
         const hasChanged = 
-          prev.name !== data.name ||
+          prev.firstName !== data.firstName ||
+          prev.lastName !== data.lastName ||
           prev.email !== data.email ||
           prev.phone !== data.phone ||
-          prev.avatar !== data.avatar;
+          prev.profileImage !== data.profileImage;
         return hasChanged ? data : prev;
       });
       setProfileData((prev) => {
         const hasChanged = 
-          prev.name !== data.name ||
+          prev.firstName !== data.firstName ||
+          prev.lastName !== data.lastName ||
           prev.email !== data.email ||
           prev.phone !== data.phone ||
-          prev.avatar !== data.avatar;
+          prev.profileImage !== data.profileImage;
         return hasChanged ? data : prev;
       });
     }
@@ -96,9 +102,9 @@ export default function ProfilePage() {
 
   const handleCropComplete = async (croppedImageUrl: string) => {
     setSaving(true);
-    const success = await updateProfile({ avatar: croppedImageUrl });
+    const success = await updateProfile({ profileImage: croppedImageUrl });
     if (success) {
-      const updatedData = { ...profileData, avatar: croppedImageUrl };
+      const updatedData = { ...profileData, profileImage: croppedImageUrl };
       setProfileData(updatedData);
       setInitialData(updatedData);
       router.refresh();
@@ -109,16 +115,18 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setSaving(true);
     const success = await updateProfile({
-      name: profileData.name,
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
       phone: profileData.phone,
-      avatar: profileData.avatar,
+      profileImage: profileData.profileImage,
     });
     if (success) {
       setInitialData({
-        name: profileData.name,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
         email: profileData.email,
         phone: profileData.phone,
-        avatar: profileData.avatar,
+        profileImage: profileData.profileImage,
       });
       router.refresh();
     }
@@ -135,35 +143,39 @@ export default function ProfilePage() {
 
   if (!session) return null;
 
+  const displayName = profileData.firstName && profileData.lastName
+    ? `${profileData.firstName} ${profileData.lastName}`
+    : profileData.firstName || profileData.lastName || 'User';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+    <div className="min-h-screen bg-[#F7F7FA] py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+          <h1 className="text-3xl font-bold text-[#1A1A2E] sm:text-4xl">
             Profile Settings
           </h1>
-          <p className="mt-2 text-base text-gray-600 sm:text-lg">
+          <p className="mt-2 text-base text-[#6C6C80] sm:text-lg">
             Customize your profile information
           </p>
         </div>
 
-        <Card className="shadow-xl">
+        <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
           <CardHeader>
-            <CardTitle className="text-2xl">Profile Information</CardTitle>
+            <CardTitle className="text-2xl text-[#1A1A2E]">Profile Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Avatar Section */}
-            <div className="flex flex-col items-center space-y-4 pb-6 border-b">
+            <div className="flex flex-col items-center space-y-4 pb-6 border-b border-[#E5E5EA]">
               <div className="relative">
                 <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                  <AvatarImage src={profileData.avatar} alt={profileData.name} />
-                  <AvatarFallback className="text-4xl bg-gradient-to-br from-blue-600 to-purple-600 text-white">
-                    {profileData.name?.charAt(0).toUpperCase() || 'U'}
+                  <AvatarImage src={profileData.profileImage} alt={displayName} />
+                  <AvatarFallback className="text-4xl bg-[#00D09C] text-white">
+                    {displayName.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <label
                   htmlFor="avatar-upload"
-                  className="absolute bottom-0 right-0 p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full cursor-pointer hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                  className="absolute bottom-0 right-0 p-2 bg-[#00D09C] rounded-full cursor-pointer hover:bg-[#00B386] transition-all shadow-lg"
                 >
                   <Camera className="h-5 w-5 text-white" />
                   <input
@@ -175,31 +187,48 @@ export default function ProfilePage() {
                   />
                 </label>
               </div>
-              <p className="text-sm text-gray-600 text-center">
+              <p className="text-sm text-[#6C6C80] text-center">
                 Click the camera icon to upload a new profile picture
               </p>
             </div>
 
             {/* Form Fields */}
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Full Name
-                </Label>
-                <Input
-                  id="name"
-                  value={profileData.name}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, name: e.target.value })
-                  }
-                  placeholder="Enter your full name"
-                  className="mt-2"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName" className="flex items-center gap-2 text-[#2D2D44]">
+                    <User className="h-4 w-4" />
+                    First Name
+                  </Label>
+                  <Input
+                    id="firstName"
+                    value={profileData.firstName}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, firstName: e.target.value })
+                    }
+                    placeholder="Enter your first name"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName" className="flex items-center gap-2 text-[#2D2D44]">
+                    <User className="h-4 w-4" />
+                    Last Name
+                  </Label>
+                  <Input
+                    id="lastName"
+                    value={profileData.lastName}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, lastName: e.target.value })
+                    }
+                    placeholder="Enter your last name"
+                    className="mt-2"
+                  />
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="email" className="flex items-center gap-2">
+                <Label htmlFor="email" className="flex items-center gap-2 text-[#2D2D44]">
                   <Mail className="h-4 w-4" />
                   Email
                 </Label>
@@ -208,15 +237,15 @@ export default function ProfilePage() {
                   type="email"
                   value={profileData.email}
                   disabled
-                  className="mt-2 bg-gray-50 cursor-not-allowed"
+                  className="mt-2 bg-[#F7F7FA] cursor-not-allowed text-[#6C6C80]"
                 />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-[#6C6C80]">
                   Email cannot be changed
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="phone" className="flex items-center gap-2">
+                <Label htmlFor="phone" className="flex items-center gap-2 text-[#2D2D44]">
                   <Phone className="h-4 w-4" />
                   Phone Number
                 </Label>
@@ -235,11 +264,11 @@ export default function ProfilePage() {
 
             {/* Save Button - Only show when form is dirty */}
             {isDirty && (
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-4 border-t border-[#E5E5EA]">
                 <Button
                   onClick={() => handleSave()}
                   disabled={saving}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   {saving ? (
                     <>

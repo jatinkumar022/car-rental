@@ -30,11 +30,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error('Invalid credentials');
         }
 
+        const userName = user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.firstName || user.lastName || user.email;
+
         return {
           id: (user._id as mongoose.Types.ObjectId).toString(),
           email: user.email,
-          name: user.name,
-          role: user.role,
+          name: userName,
+          role: user.userType || 'renter', // Map userType to role for session
         };
       },
     }),

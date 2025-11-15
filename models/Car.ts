@@ -1,29 +1,43 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export interface ICarImage {
+  url: string;
+  isPrimary: boolean;
+  orderIndex: number;
+}
+
 export interface ICar extends Omit<Document, 'model'> {
-  owner: mongoose.Types.ObjectId;
+  hostId: mongoose.Types.ObjectId;
   make: string;
   model: string; // Car model name (e.g., "Camry")
   year: number;
-  type: string;
+  registrationNumber?: string;
+  color?: string;
+  fuelType: 'petrol' | 'diesel' | 'electric' | 'cng';
   transmission: 'automatic' | 'manual';
-  fuelType: 'petrol' | 'diesel' | 'electric' | 'hybrid';
-  seats: number;
-  pricePerDay: number;
-  location: string;
-  images: string[];
+  seatingCapacity: number;
+  mileage?: string;
   description: string;
+  dailyPrice: number;
+  weeklyDiscount: number;
+  monthlyDiscount: number;
+  locationAddress?: string;
+  locationCity?: string;
+  locationState?: string;
+  locationLat?: number;
+  locationLng?: number;
+  status: 'pending' | 'active' | 'inactive' | 'suspended';
+  images: ICarImage[];
   features: string[];
-  available: boolean;
   rating: number;
-  totalReviews: number;
+  totalTrips: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const CarSchema: Schema = new Schema(
   {
-    owner: {
+    hostId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -44,53 +58,98 @@ const CarSchema: Schema = new Schema(
       min: [1900, 'Year must be valid'],
       max: [new Date().getFullYear() + 1, 'Year cannot be in the future'],
     },
-    type: {
+    registrationNumber: {
       type: String,
-      required: [true, 'Please provide car type'],
+      unique: true,
+      sparse: true,
       trim: true,
+    },
+    color: {
+      type: String,
+      trim: true,
+    },
+    fuelType: {
+      type: String,
+      enum: ['petrol', 'diesel', 'electric', 'cng'],
+      required: true,
     },
     transmission: {
       type: String,
       enum: ['automatic', 'manual'],
       required: true,
     },
-    fuelType: {
-      type: String,
-      enum: ['petrol', 'diesel', 'electric', 'hybrid'],
-      required: true,
-    },
-    seats: {
+    seatingCapacity: {
       type: Number,
       required: true,
       min: [2, 'Car must have at least 2 seats'],
       max: [20, 'Car cannot have more than 20 seats'],
     },
-    pricePerDay: {
-      type: Number,
-      required: [true, 'Please provide price per day'],
-      min: [0, 'Price cannot be negative'],
-    },
-    location: {
+    mileage: {
       type: String,
-      required: [true, 'Please provide location'],
       trim: true,
-    },
-    images: {
-      type: [String],
-      default: [],
     },
     description: {
       type: String,
       required: [true, 'Please provide description'],
       trim: true,
     },
+    dailyPrice: {
+      type: Number,
+      required: [true, 'Please provide price per day'],
+      min: [0, 'Price cannot be negative'],
+    },
+    weeklyDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    monthlyDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    locationAddress: {
+      type: String,
+      trim: true,
+    },
+    locationCity: {
+      type: String,
+      trim: true,
+    },
+    locationState: {
+      type: String,
+      trim: true,
+    },
+    locationLat: {
+      type: Number,
+    },
+    locationLng: {
+      type: Number,
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'active', 'inactive', 'suspended'],
+      default: 'pending',
+    },
+    images: [{
+      url: {
+        type: String,
+        required: true,
+      },
+      isPrimary: {
+        type: Boolean,
+        default: false,
+      },
+      orderIndex: {
+        type: Number,
+        default: 0,
+      },
+    }],
     features: {
       type: [String],
       default: [],
-    },
-    available: {
-      type: Boolean,
-      default: true,
     },
     rating: {
       type: Number,
@@ -98,7 +157,7 @@ const CarSchema: Schema = new Schema(
       min: 0,
       max: 5,
     },
-    totalReviews: {
+    totalTrips: {
       type: Number,
       default: 0,
     },
@@ -107,6 +166,16 @@ const CarSchema: Schema = new Schema(
     timestamps: true,
   }
 );
+
+// Database indexes for better query performance
+CarSchema.index({ hostId: 1 });
+CarSchema.index({ status: 1 });
+CarSchema.index({ locationCity: 1 });
+CarSchema.index({ locationState: 1 });
+CarSchema.index({ dailyPrice: 1 });
+CarSchema.index({ make: 1, model: 1 });
+CarSchema.index({ fuelType: 1, transmission: 1 });
+CarSchema.index({ 'locationLat': 1, 'locationLng': 1 }); // For geospatial queries
 
 const Car: Model<ICar> = mongoose.models.Car || mongoose.model<ICar>('Car', CarSchema);
 

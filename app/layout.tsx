@@ -4,6 +4,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -34,8 +36,13 @@ export default function RootLayout({
         <Providers>
           <div className="flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-16 md:pb-0">
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </main>
             <Footer />
+            <MobileBottomNav />
           </div>
           <Toaster position="top-right" richColors />
         </Providers>

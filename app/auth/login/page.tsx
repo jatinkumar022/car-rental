@@ -1,23 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Car, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  useEffect(() => {
+    if (searchParams?.get('registered') === 'true') {
+      toast.success('Registration successful! Please sign in.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +42,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Invalid email or password');
       } else {
-        router.push('/my-cars');
+        router.push('/dashboard');
         router.refresh();
       }
     } catch {
@@ -45,21 +53,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 px-4 py-12">
-      <Card className="w-full max-w-md shadow-2xl border-0">
+    <div className="flex min-h-screen items-center justify-center bg-[#F7F7FA] px-4 py-12">
+      <Card className="w-full max-w-md shadow-[0_4px_16px_rgba(0,0,0,0.12)] border-0">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100">
-            <Car className="h-8 w-8 text-blue-600" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E6FFF9]">
+            <Car className="h-8 w-8 text-[#00D09C]" />
           </div>
-          <CardTitle className="text-3xl font-bold text-gray-900">Welcome Back</CardTitle>
-          <CardDescription className="text-base">
+          <CardTitle className="text-3xl font-bold text-[#1A1A2E]">Welcome Back</CardTitle>
+          <CardDescription className="text-base text-[#6C6C80]">
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              <div className="rounded-lg bg-[#FFE5E5] border border-[#FF4444] p-3 text-sm text-[#FF4444]">
                 {error}
               </div>
             )}
@@ -93,7 +101,7 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+              className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={loading}
             >
               {loading ? (
@@ -106,11 +114,19 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm font-semibold text-[#00D09C] hover:text-[#00B386] hover:underline transition"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Don&apos;t have an account? </span>
+            <span className="text-[#6C6C80]">Don&apos;t have an account? </span>
             <Link
               href="/auth/register"
-              className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition"
+              className="font-semibold text-[#00D09C] hover:text-[#00B386] hover:underline transition"
             >
               Sign up
             </Link>
