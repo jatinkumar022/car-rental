@@ -190,8 +190,9 @@ export default function CarDetailPage() {
   };
 
   useEffect(() => {
-    if (car) {
-      fetchSimilarCars(car.type, car._id);
+    if (car && car._id) {
+      const carType = ('type' in car && car.type) ? car.type : car.make || 'sedan';
+      fetchSimilarCars(carType, car._id);
     }
   }, [car, fetchSimilarCars]);
 
@@ -280,8 +281,16 @@ export default function CarDetailPage() {
         : ((car.images as unknown as Array<{ url: string }>).map(img => img.url)))
     : ['/placeholder.svg'];
 
-  const host = car?.hostId || car?.owner;
-  const hostName = host ? `${host.firstName || host.name || ''} ${host.lastName || ''}`.trim() || host.email : 'Host';
+  const host: CarHost | undefined = (car && 'hostId' in car ? car.hostId : undefined) || (car && 'owner' in car ? car.owner : undefined);
+  const hostName = host 
+    ? (host.firstName && host.lastName
+        ? `${host.firstName} ${host.lastName}`
+        : host.firstName
+        ? host.firstName
+        : host.lastName
+        ? host.lastName
+        : host.name || host.email)
+    : 'Host';
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] py-8">
@@ -482,16 +491,18 @@ export default function CarDetailPage() {
                               </div>
                             </div>
                           </div>
-                          {host.phone && (
+                          {host && host.phone && (
                             <div className="flex items-center gap-2 text-sm text-[#6C6C80] mb-2">
                               <Phone className="h-4 w-4" />
                               <span>{host.phone}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-2 text-sm text-[#6C6C80]">
-                            <Mail className="h-4 w-4" />
-                            <span>{host.email}</span>
-                          </div>
+                          {host && (
+                            <div className="flex items-center gap-2 text-sm text-[#6C6C80]">
+                              <Mail className="h-4 w-4" />
+                              <span>{host.email}</span>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -966,9 +977,31 @@ export default function CarDetailPage() {
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Similar Listings</h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {similarCars.map((similarCar) => (
-                <CarCard key={similarCar._id} car={similarCar} />
-              ))}
+                {similarCars.map((similarCar) => {
+                  // Transform store Car type to CarCard expected format
+                  const carImages: string[] = Array.isArray(similarCar.images) 
+                    ? (typeof similarCar.images[0] === 'string' 
+                        ? similarCar.images as string[]
+                        : (similarCar.images as Array<{ url: string }>).map(img => img.url))
+                    : [];
+                  const location = similarCar.locationCity || similarCar.locationAddress || similarCar.location || '';
+                  const carCardCar = {
+                    _id: similarCar._id,
+                    make: similarCar.make,
+                    model: similarCar.model,
+                    year: similarCar.year,
+                    images: carImages,
+                    pricePerDay: similarCar.dailyPrice || similarCar.pricePerDay || 0,
+                    location: location,
+                    seats: similarCar.seatingCapacity || similarCar.seats || 0,
+                    totalReviews: similarCar.totalTrips || similarCar.totalReviews || 0,
+                    transmission: similarCar.transmission,
+                    fuelType: similarCar.fuelType,
+                    rating: similarCar.rating,
+                    available: similarCar.available ?? (similarCar.status === 'active'),
+                  };
+                  return <CarCard key={similarCar._id} car={carCardCar} />;
+                })}
             </div>
           </div>
         )}

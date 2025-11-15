@@ -6,28 +6,41 @@ interface Car {
   make: string;
   model: string;
   year: number;
-  type: string;
+  type?: string;
   transmission: string;
   fuelType: string;
-  seats: number;
-  seatingCapacity?: number; // New field
-  pricePerDay: number;
-  dailyPrice?: number; // New field
-  location: string;
-  locationCity?: string; // New field
-  locationAddress?: string; // New field
-  images: string[];
+  seats?: number;
+  seatingCapacity?: number;
+  pricePerDay?: number;
+  dailyPrice?: number;
+  location?: string;
+  locationCity?: string;
+  locationAddress?: string;
+  images: Array<{ url: string; isPrimary?: boolean; orderIndex?: number }> | string[];
   description: string;
   features: string[];
   rating: number;
-  totalReviews: number;
-  totalTrips?: number; // New field
-  available: boolean;
-  status?: 'pending' | 'active' | 'inactive' | 'suspended'; // New field
+  totalReviews?: number;
+  totalTrips?: number;
+  available?: boolean;
+  status?: 'pending' | 'active' | 'inactive' | 'suspended';
+  hostId?: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    email: string;
+    profileImage?: string;
+    avatar?: string;
+    phone?: string;
+  };
   owner?: {
     _id: string;
-    name: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
     email: string;
+    profileImage?: string;
     avatar?: string;
     phone?: string;
   };

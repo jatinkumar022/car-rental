@@ -26,6 +26,10 @@ interface CheckoutCar {
   locationCity?: string;
   locationAddress?: string;
   location?: string;
+  transmission?: string;
+  fuelType?: string;
+  seatingCapacity?: number;
+  seats?: number;
   hostId?: {
     _id: string;
     firstName?: string;

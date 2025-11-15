@@ -31,6 +31,8 @@ interface Booking {
     images: Array<{ url: string }> | string[];
     locationCity?: string;
     locationAddress?: string;
+    location?: string;
+    dailyPrice?: number;
   };
   car?: {
     _id: string;

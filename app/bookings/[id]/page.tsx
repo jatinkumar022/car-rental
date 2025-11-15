@@ -41,9 +41,11 @@ interface Booking {
     dailyPrice: number;
     locationCity?: string;
     locationAddress?: string;
+    location?: string;
     transmission: string;
     fuelType: string;
-    seatingCapacity: number;
+    seatingCapacity?: number;
+    seats?: number;
   };
   car?: {
     _id: string;
@@ -54,9 +56,11 @@ interface Booking {
     dailyPrice: number;
     locationCity?: string;
     locationAddress?: string;
+    location?: string;
     transmission: string;
     fuelType: string;
-    seatingCapacity: number;
+    seatingCapacity?: number;
+    seats?: number;
   };
   renterId?: {
     _id: string;
@@ -236,17 +240,41 @@ export default function BookingDetailsPage() {
         : (car.images as Array<{ url: string }>).map(img => img.url))
     : ['/placeholder.svg'];
 
-  const renterName = renter 
-    ? (renter.firstName && renter.lastName 
-        ? `${renter.firstName} ${renter.lastName}` 
-        : renter.name || renter.email)
-    : 'Unknown';
+  // Type guard to check if object has firstName property (renterId/hostId type)
+  const isRenterIdType = (obj: typeof renter): obj is { firstName?: string; lastName?: string; email: string; _id: string; phone?: string } => {
+    return obj !== null && obj !== undefined && 'firstName' in obj;
+  };
 
-  const hostName = host
-    ? (host.firstName && host.lastName
-        ? `${host.firstName} ${host.lastName}`
-        : host.name || host.email)
-    : 'Unknown';
+  const isHostIdType = (obj: typeof host): obj is { firstName?: string; lastName?: string; email: string; _id: string; phone?: string } => {
+    return obj !== null && obj !== undefined && 'firstName' in obj;
+  };
+
+  const getRenterName = (r: typeof renter): string => {
+    if (!r) return 'Unknown';
+    if (isRenterIdType(r)) {
+      if (r.firstName && r.lastName) return `${r.firstName} ${r.lastName}`;
+      return r.email;
+    }
+    // TypeScript now knows it's the 'renter' type
+    const renterType = r as { name?: string; email: string };
+    if (renterType.name) return renterType.name;
+    return renterType.email;
+  };
+
+  const getHostName = (h: typeof host): string => {
+    if (!h) return 'Unknown';
+    if (isHostIdType(h)) {
+      if (h.firstName && h.lastName) return `${h.firstName} ${h.lastName}`;
+      return h.email;
+    }
+    // TypeScript now knows it's the 'owner' type
+    const ownerType = h as { name?: string; email: string };
+    if (ownerType.name) return ownerType.name;
+    return ownerType.email;
+  };
+
+  const renterName = getRenterName(renter);
+  const hostName = getHostName(host);
 
   const isOwner = host && getId(host) === session?.user?.id;
   const isRenter = renter && getId(renter) === session?.user?.id;
@@ -301,7 +329,7 @@ export default function BookingDetailsPage() {
                         <div className="space-y-2 text-sm text-[#6C6C80]">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
-                            <span>{car.locationCity || car.locationAddress || car.location || 'Location not specified'}</span>
+                            <span>{car.locationCity || car.locationAddress || ('location' in car ? car.location : undefined) || 'Location not specified'}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Car className="h-4 w-4" />
@@ -309,7 +337,7 @@ export default function BookingDetailsPage() {
                             <span className="mx-2">•</span>
                             <span className="capitalize">{car.fuelType}</span>
                             <span className="mx-2">•</span>
-                            <span>{car.seatingCapacity || car.seats} Seats</span>
+                            <span>{(car.seatingCapacity || ('seats' in car ? car.seats : undefined) || 0)} Seats</span>
                           </div>
                         </div>
                       </div>
@@ -381,12 +409,12 @@ export default function BookingDetailsPage() {
                       <p className="text-lg font-semibold text-[#1A1A2E]">{renterName}</p>
                       <div className="flex items-center gap-2 mt-2 text-sm text-[#6C6C80]">
                         <Mail className="h-4 w-4" />
-                        <span>{renter.email}</span>
+                        <span>{isRenterIdType(renter) ? renter.email : (renter && 'email' in renter ? renter.email : 'N/A')}</span>
                       </div>
-                      {renter.phone && (
+                      {(isRenterIdType(renter) ? renter.phone : (renter && 'phone' in renter ? renter.phone : undefined)) && (
                         <div className="flex items-center gap-2 mt-1 text-sm text-[#6C6C80]">
                           <Phone className="h-4 w-4" />
-                          <span>{renter.phone}</span>
+                          <span>{isRenterIdType(renter) ? renter.phone : (renter && 'phone' in renter ? renter.phone : '')}</span>
                         </div>
                       )}
                     </div>
@@ -399,12 +427,12 @@ export default function BookingDetailsPage() {
                       <p className="text-lg font-semibold text-[#1A1A2E]">{hostName}</p>
                       <div className="flex items-center gap-2 mt-2 text-sm text-[#6C6C80]">
                         <Mail className="h-4 w-4" />
-                        <span>{host.email}</span>
+                        <span>{isHostIdType(host) ? host.email : (host && 'email' in host ? host.email : 'N/A')}</span>
                       </div>
-                      {host.phone && (
+                      {(isHostIdType(host) ? host.phone : (host && 'phone' in host ? host.phone : undefined)) && (
                         <div className="flex items-center gap-2 mt-1 text-sm text-[#6C6C80]">
                           <Phone className="h-4 w-4" />
-                          <span>{host.phone}</span>
+                          <span>{isHostIdType(host) ? host.phone : (host && 'phone' in host ? host.phone : '')}</span>
                         </div>
                       )}
                     </div>

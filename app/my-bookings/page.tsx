@@ -38,16 +38,19 @@ interface Booking {
     make: string;
     model: string;
     images: Array<{ url: string }> | string[];
-    dailyPrice: number;
+    dailyPrice?: number;
+    pricePerDay?: number;
     locationCity?: string;
     locationAddress?: string;
+    location?: string;
   };
   car?: {
     _id: string;
     make: string;
     model: string;
     images: Array<{ url: string }> | string[];
-    dailyPrice: number;
+    dailyPrice?: number;
+    pricePerDay?: number;
     locationCity?: string;
     locationAddress?: string;
     location?: string;
@@ -139,11 +142,17 @@ export default function MyBookingsPage() {
     return bookings.filter((booking) => {
       const car = booking.carId || booking.car;
       const renter = booking.renterId || booking.renter;
-      const renterName = renter 
-        ? (renter.firstName && renter.lastName 
-            ? `${renter.firstName} ${renter.lastName}` 
-            : renter.name || renter.email || '')
-        : '';
+      const getRenterNameForFilter = (r: typeof renter): string => {
+        if (!r || typeof r !== 'object') return '';
+        if ('firstName' in r && r.firstName && r.lastName) {
+          return `${r.firstName} ${r.lastName}`;
+        }
+        if ('firstName' in r) return r.email;
+        if ('name' in r) return r.name;
+        if ('email' in r) return r.email;
+        return '';
+      };
+      const renterName = getRenterNameForFilter(renter);
       
       const matchesSearch = 
         (car?.make?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
@@ -173,11 +182,17 @@ export default function MyBookingsPage() {
           : (car.images as Array<{ url: string }>).map(img => img.url))
       : ['/placeholder.svg'];
 
-    const renterName = renter 
-      ? (renter.firstName && renter.lastName 
-          ? `${renter.firstName} ${renter.lastName}` 
-          : renter.name || renter.email || 'Unknown')
-      : 'Unknown';
+    const getRenterName = (r: typeof renter): string => {
+      if (!r || typeof r !== 'object') return 'Unknown';
+      if ('firstName' in r && r.firstName && r.lastName) {
+        return `${r.firstName} ${r.lastName}`;
+      }
+      if ('firstName' in r) return r.email;
+      if ('name' in r) return r.name;
+      if ('email' in r) return r.email;
+      return 'Unknown';
+    };
+    const renterName = getRenterName(renter);
 
     return (
       <Card key={booking._id} className="overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-shadow">

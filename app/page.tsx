@@ -244,9 +244,30 @@ export default function Home() {
           <Loader fullHeight text="Loading featured cars..." />
         ) : featuredCars.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredCars.map((car) => (
-              <CarCard key={car._id} car={car} />
-            ))}
+            {featuredCars.map((car) => {
+              const carImages: string[] = Array.isArray(car.images) 
+                ? (typeof car.images[0] === 'string' 
+                    ? car.images as string[]
+                    : (car.images as Array<{ url: string }>).map(img => img.url))
+                : [];
+              const location = car.locationCity || car.locationAddress || car.location || '';
+              const carCardCar = {
+                _id: car._id,
+                make: car.make,
+                model: car.model,
+                year: car.year,
+                images: carImages,
+                pricePerDay: car.dailyPrice || car.pricePerDay || 0,
+                location: location,
+                seats: car.seatingCapacity || car.seats || 0,
+                totalReviews: car.totalTrips || car.totalReviews || 0,
+                transmission: car.transmission,
+                fuelType: car.fuelType,
+                rating: car.rating,
+                available: car.available ?? (car.status === 'active'),
+              };
+              return <CarCard key={car._id} car={carCardCar} />;
+            })}
           </div>
         ) : (
           <div className="py-12 text-center">
