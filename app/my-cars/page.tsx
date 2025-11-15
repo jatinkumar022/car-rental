@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Car, Calendar, IndianRupee, TrendingUp, Eye, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Car, Calendar, IndianRupee, TrendingUp, Eye, Trash2, Search, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -110,6 +110,17 @@ export default function MyCarsPage() {
     setUploading(false);
   };
 
+  const handleRemoveImage = (index: number) => {
+    setCarForm({
+      ...carForm,
+      images: carForm.images.filter((_, i) => i !== index),
+    });
+    // Clear image error if images exist after removal
+    if (carForm.images.length > 1 && errors.images) {
+      setErrors({ ...errors, images: '' });
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     
@@ -134,21 +145,40 @@ export default function MyCarsPage() {
       return;
     }
 
+    // Parse and validate numeric values
+    const year = parseInt(carForm.year);
+    const seats = parseInt(carForm.seats);
+    const pricePerDay = parseFloat(carForm.pricePerDay);
+
+    // Double-check that required numeric fields are valid
+    if (isNaN(year) || isNaN(seats) || isNaN(pricePerDay)) {
+      setErrors({ 
+        ...errors, 
+        ...(isNaN(year) && { year: 'Please provide a valid year' }),
+        ...(isNaN(seats) && { seats: 'Please provide a valid number of seats' }),
+        ...(isNaN(pricePerDay) && { pricePerDay: 'Please provide a valid price' }),
+      });
+      return;
+    }
+
     const carData = {
-      ...carForm,
-      year: parseInt(carForm.year) || new Date().getFullYear(),
-      seats: parseInt(carForm.seats) || 5, // Use 'seats' for store compatibility
+      make: carForm.make.trim(),
+      model: carForm.model.trim(),
+      year: year,
+      transmission: carForm.transmission,
+      fuelType: carForm.fuelType,
+      seats: seats, // Will be mapped to seatingCapacity in API
       features: carForm.features
         .split(',')
         .map((f) => f.trim())
         .filter(Boolean),
-      pricePerDay: parseFloat(carForm.pricePerDay), // Use pricePerDay for store
-      location: carForm.location, // Use location for store
-      available: true, // Use available for store
+      pricePerDay: pricePerDay, // Will be mapped to dailyPrice in API
+      location: carForm.location.trim(), // Will be mapped to locationCity in API
+      description: carForm.description.trim(),
+      images: carForm.images, // Include images - API will convert to proper format
     };
-    // Exclude images from carData (store expects string[] but we have mixed types)
-    const { images: _images, ...carDataWithoutImages } = carData as Partial<Car>;
-    const success = await createCar(carDataWithoutImages as Parameters<typeof createCar>[0]);
+    
+    const success = await createCar(carData as Parameters<typeof createCar>[0]);
 
     if (success) {
       setAddCarOpen(false);
@@ -452,7 +482,7 @@ export default function MyCarsPage() {
                     {carForm.images.length > 0 && (
                       <div className="mt-2 grid grid-cols-4 gap-2">
                         {carForm.images.map((img, i) => (
-                          <div key={i} className="relative h-20 w-full">
+                          <div key={i} className="relative h-20 w-full group">
                             <Image
                               src={img}
                               alt={`Upload ${i + 1}`}
@@ -460,6 +490,14 @@ export default function MyCarsPage() {
                               className="rounded-lg object-cover"
                               sizes="(max-width: 768px) 25vw, 20vw"
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(i)}
+                              className="absolute -top-2 -right-2 h-6 w-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
+                              aria-label="Remove image"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
                           </div>
                         ))}
                       </div>

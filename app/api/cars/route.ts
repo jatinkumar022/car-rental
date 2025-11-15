@@ -97,10 +97,65 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     await dbConnect();
 
-    const car = await Car.create({
+    // Map frontend field names to database field names
+    const carData: Record<string, unknown> = {
       ...body,
       hostId: session.user.id,
-    });
+    };
+
+    // Map seats to seatingCapacity
+    if (body.seats !== undefined && body.seats !== null) {
+      const seatsValue = typeof body.seats === 'string' ? parseInt(body.seats) : body.seats;
+      if (!isNaN(seatsValue) && seatsValue > 0) {
+        carData.seatingCapacity = seatsValue;
+      }
+      delete carData.seats;
+    }
+    
+    // Ensure seatingCapacity is set (required field)
+    if (!carData.seatingCapacity) {
+      return NextResponse.json(
+        { error: 'seatingCapacity is required' },
+        { status: 400 }
+      );
+    }
+
+    // Map pricePerDay to dailyPrice
+    if (body.pricePerDay !== undefined && body.pricePerDay !== null) {
+      const priceValue = typeof body.pricePerDay === 'string' ? parseFloat(body.pricePerDay) : body.pricePerDay;
+      if (!isNaN(priceValue) && priceValue >= 0) {
+        carData.dailyPrice = priceValue;
+      }
+      delete carData.pricePerDay;
+    }
+    
+    // Ensure dailyPrice is set (required field)
+    if (carData.dailyPrice === undefined || carData.dailyPrice === null || 
+        (typeof carData.dailyPrice === 'number' && isNaN(carData.dailyPrice))) {
+      return NextResponse.json(
+        { error: 'dailyPrice is required' },
+        { status: 400 }
+      );
+    }
+
+    // Map location to locationCity if locationCity is not provided
+    if (body.location && !body.locationCity) {
+      carData.locationCity = body.location;
+      delete carData.location;
+    }
+
+    // Handle images - convert string[] to ICarImage[] format if needed
+    if (body.images && Array.isArray(body.images) && body.images.length > 0) {
+      if (typeof body.images[0] === 'string') {
+        carData.images = body.images.map((url: string, index: number) => ({
+          url,
+          isPrimary: index === 0,
+          orderIndex: index,
+        }));
+      }
+    }
+
+    const car = await Car.create(carData);
 
     return NextResponse.json({ car }, { status: 201 });
   } catch (error) {

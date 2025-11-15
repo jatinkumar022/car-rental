@@ -120,6 +120,7 @@ export default function CarDetailPage() {
     rating: 5,
     comment: '',
   });
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const checkFavorite = useCallback(async () => {
     if (!session?.user?.id || !params.id) return;
@@ -195,6 +196,11 @@ export default function CarDetailPage() {
       fetchSimilarCars(carType, car._id);
     }
   }, [car, fetchSimilarCars]);
+
+  // Reset selected image when car changes
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [car?._id]);
 
   const handleBooking = () => {
     if (!session) {
@@ -312,7 +318,7 @@ export default function CarDetailPage() {
             <Card className="mb-6 overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <div className="relative h-64 w-full sm:h-96 lg:h-[500px]">
                 <Image
-                  src={carImages[0] || '/placeholder.svg'}
+                  src={carImages[selectedImageIndex] || carImages[0] || '/placeholder.svg'}
                   alt={`${car.make} ${car.model}`}
                   fill
                   className="object-cover"
@@ -320,18 +326,28 @@ export default function CarDetailPage() {
                 />
               </div>
               {carImages.length > 1 && (
-                <div className="grid grid-cols-4 gap-2 p-4 bg-white">
-                  {carImages.slice(1, 5).map((img, i) => (
-                    <div key={i} className="relative h-20 w-full rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition">
-                      <Image
-                        src={img}
-                        alt={`${car.make} ${car.model} ${i + 2}`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 25vw, 16vw"
-                      />
-                    </div>
-                  ))}
+                <div className="p-4 bg-white">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-32 overflow-y-auto">
+                    {carImages.map((img, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setSelectedImageIndex(i)}
+                        className={`relative h-20 w-full rounded-lg overflow-hidden cursor-pointer transition-all ${
+                          selectedImageIndex === i
+                            ? 'ring-2 ring-[#00D09C] ring-offset-2 opacity-100 scale-105'
+                            : 'hover:opacity-80 opacity-70 hover:scale-105'
+                        }`}
+                      >
+                        <Image
+                          src={img}
+                          alt={`${car.make} ${car.model} ${i + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 20vw, 12vw"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </Card>
