@@ -155,6 +155,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Set default status to 'active' if not provided
+    if (!carData.status) {
+      carData.status = 'active';
+    }
+
     const car = await Car.create(carData);
 
     return NextResponse.json({ car }, { status: 201 });

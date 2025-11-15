@@ -214,7 +214,8 @@ export default function MyCarsPage() {
   };
 
   const handleToggleAvailability = async (carId: string, currentStatus: boolean) => {
-    const updateData = { available: !currentStatus };
+    // Update status field: 'active' for available, 'inactive' for unavailable
+    const updateData = { status: currentStatus ? 'inactive' : 'active' };
     const success = await updateCar(carId, updateData as Parameters<typeof updateCar>[1]);
     if (success && session?.user?.id) {
       fetchCars({ ownerId: session.user.id });
