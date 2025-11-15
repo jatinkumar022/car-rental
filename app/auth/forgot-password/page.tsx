@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
         toast.success('Password reset link sent to your email!');
         // DEMO: Show the reset link if provided (only for demo purposes)
         if (data.demoResetLink) {
-          console.log('Demo reset link:', data.demoResetLink);
+          console.warn('DEMO: Reset link:', data.demoResetLink);
           // In production, this would be sent via email only
         }
       } else {
@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
                 Please check your inbox at <strong>{email}</strong> and click on the reset link.
               </p>
               <p className="text-xs text-[#6C6C80]">
-                Didn't receive the email? Check your spam folder or try again.
+                Didn&apos;t receive the email? Check your spam folder or try again.
               </p>
               <div className="flex flex-col gap-3 pt-4">
                 <Button

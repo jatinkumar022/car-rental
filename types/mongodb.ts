@@ -40,11 +40,14 @@ export function getOwnerId(owner: mongoose.Types.ObjectId | PopulatedCarOwner): 
 export type CarQuery = {
   available?: boolean;
   owner?: string | mongoose.Types.ObjectId;
+  hostId?: string | mongoose.Types.ObjectId;
   type?: string;
   transmission?: string;
   fuelType?: string;
   location?: string | { $regex: string; $options: string };
   pricePerDay?: number | { $gte?: number; $lte?: number };
+  dailyPrice?: number | { $gte?: number; $lte?: number };
+  status?: 'pending' | 'active' | 'inactive' | 'suspended';
   $or?: Array<{ [key: string]: { $regex: string; $options: string } }>;
   car?: { $in: mongoose.Types.ObjectId[] };
 };

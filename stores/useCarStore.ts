@@ -10,14 +10,20 @@ interface Car {
   transmission: string;
   fuelType: string;
   seats: number;
+  seatingCapacity?: number; // New field
   pricePerDay: number;
+  dailyPrice?: number; // New field
   location: string;
+  locationCity?: string; // New field
+  locationAddress?: string; // New field
   images: string[];
   description: string;
   features: string[];
   rating: number;
   totalReviews: number;
+  totalTrips?: number; // New field
   available: boolean;
+  status?: 'pending' | 'active' | 'inactive' | 'suspended'; // New field
   owner?: {
     _id: string;
     name: string;

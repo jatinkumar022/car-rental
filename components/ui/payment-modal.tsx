@@ -16,7 +16,7 @@ interface PaymentModalProps {
   onSuccess: () => void;
 }
 
-export function PaymentModal({ open, onOpenChange, amount, bookingId, onSuccess }: PaymentModalProps) {
+export function PaymentModal({ open, onOpenChange, amount, bookingId: _bookingId, onSuccess }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'wallet'>('card');
   const [cardNumber, setCardNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
@@ -45,7 +45,7 @@ export function PaymentModal({ open, onOpenChange, amount, bookingId, onSuccess 
   };
 
   const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
+    const value = e.target.value.replace(/\D/g, '');
     if (value.length <= 3) {
       setCvv(value);
     }

@@ -21,6 +21,7 @@ interface Booking {
   endDate: string;
   totalDays: number;
   totalPrice: number;
+  totalAmount?: number; // New field from API
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   createdAt: string;

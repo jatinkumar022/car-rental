@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,13 +8,8 @@ import {
   Car, 
   Calendar, 
   IndianRupee, 
-  TrendingUp, 
-  Eye, 
   Star,
-  Users,
   Clock,
-  CheckCircle,
-  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,15 +24,7 @@ export default function DashboardPage() {
   const { stats: bookingStats, fetchRenterBookings, fetchOwnerBookings } = useBookingStore();
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    } else if (status === 'authenticated' && session?.user?.id) {
-      loadDashboardData();
-    }
-  }, [status, router, session?.user?.id]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       await Promise.all([
@@ -50,7 +37,15 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchCarStats, fetchRenterBookings, fetchOwnerBookings]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    } else if (status === 'authenticated' && session?.user?.id) {
+      loadDashboardData();
+    }
+  }, [status, router, session?.user?.id, loadDashboardData]);
 
   if (status === 'loading' || loading) {
     return (

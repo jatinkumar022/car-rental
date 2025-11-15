@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Booking from '@/models/Booking';
-import Car from '@/models/Car';
 import { auth } from '@/lib/auth';
 
 export async function GET(

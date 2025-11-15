@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Send, User, Calendar, Car } from 'lucide-react';
+import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import Loader from '@/components/Loader';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import Link from 'next/link';
 
 interface Message {
   _id: string;
@@ -68,15 +67,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    } else if (status === 'authenticated' && session?.user?.id) {
-      fetchConversations();
-    }
-  }, [status, router, session?.user?.id]);
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       // Get all bookings for the user
       const bookingsRes = await fetch('/api/bookings');
@@ -136,7 +127,15 @@ export default function MessagesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    } else if (status === 'authenticated' && session?.user?.id) {
+      fetchConversations();
+    }
+  }, [status, router, session?.user?.id, fetchConversations]);
 
   const fetchMessages = async (bookingId: string) => {
     try {

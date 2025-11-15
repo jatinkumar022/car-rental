@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
@@ -12,7 +12,6 @@ import {
   Car,
   IndianRupee,
   ArrowRight,
-  Download,
   Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,17 @@ interface Booking {
     locationCity?: string;
     locationAddress?: string;
   };
-  car?: any;
+  car?: {
+    _id: string;
+    make: string;
+    model: string;
+    year: number;
+    images: Array<{ url: string }> | string[];
+    locationCity?: string;
+    locationAddress?: string;
+    location?: string;
+    dailyPrice?: number;
+  };
   startDate: string;
   endDate: string;
   totalDays: number;
@@ -55,15 +64,7 @@ export default function BookingConfirmationPage() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    } else if (status === 'authenticated' && session?.user?.id && params.id) {
-      fetchBookingDetails();
-    }
-  }, [status, router, session?.user?.id, params.id]);
-
-  const fetchBookingDetails = async () => {
+  const fetchBookingDetails = useCallback(async () => {
     try {
       const res = await fetch(`/api/bookings/${params.id}`);
       const data = await res.json();
@@ -80,14 +81,22 @@ export default function BookingConfirmationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    } else if (status === 'authenticated' && session?.user?.id && params.id) {
+      fetchBookingDetails();
+    }
+  }, [status, router, session?.user?.id, params.id, fetchBookingDetails]);
 
   const handleShare = async () => {
     if (navigator.share && booking) {
       try {
         await navigator.share({
           title: 'My Car Booking Confirmation',
-          text: `I've booked ${booking.carId?.make || booking.car?.make} ${booking.carId?.model || booking.car?.model} from ${format(new Date(booking.startDate), 'MMM dd')} to ${format(new Date(booking.endDate), 'MMM dd')}`,
+          text: `I&apos;ve booked ${booking.carId?.make || booking.car?.make} ${booking.carId?.model || booking.car?.model} from ${format(new Date(booking.startDate), 'MMM dd')} to ${format(new Date(booking.endDate), 'MMM dd')}`,
           url: window.location.href,
         });
       } catch (error) {
@@ -300,7 +309,7 @@ export default function BookingConfirmationPage() {
         {/* Next Steps */}
         <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)] mt-6">
           <CardHeader>
-            <CardTitle className="text-[#1A1A2E]">What's Next?</CardTitle>
+            <CardTitle className="text-[#1A1A2E]">What&apos;s Next?</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -311,7 +320,7 @@ export default function BookingConfirmationPage() {
                 <div>
                   <h3 className="font-semibold text-[#1A1A2E] mb-1">Mark Your Calendar</h3>
                   <p className="text-sm text-[#6C6C80]">
-                    Make sure you're available on {format(new Date(booking.startDate), 'MMMM dd, yyyy')} for pickup.
+                    Make sure you&apos;re available on {format(new Date(booking.startDate), 'MMMM dd, yyyy')} for pickup.
                   </p>
                 </div>
               </div>
@@ -322,7 +331,7 @@ export default function BookingConfirmationPage() {
                 <div>
                   <h3 className="font-semibold text-[#1A1A2E] mb-1">Prepare for Pickup</h3>
                   <p className="text-sm text-[#6C6C80]">
-                    You'll receive detailed pickup instructions and contact information via email.
+                    You&apos;ll receive detailed pickup instructions and contact information via email.
                   </p>
                 </div>
               </div>

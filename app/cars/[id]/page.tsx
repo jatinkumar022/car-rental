@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
@@ -44,6 +44,16 @@ import { useBookingStore } from '@/stores/useBookingStore';
 import { useReviewStore } from '@/stores/useReviewStore';
 import { toast } from 'sonner';
 
+interface CarHost {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email: string;
+  profileImage?: string;
+  phone?: string;
+}
+
 interface Car {
   _id: string;
   make: string;
@@ -51,25 +61,43 @@ interface Car {
   year: number;
   transmission: string;
   fuelType: string;
-  seatingCapacity: number;
-  dailyPrice: number;
-  pricePerDay?: number; // Fallback
+  seatingCapacity?: number;
+  seats?: number;
+  dailyPrice?: number;
+  pricePerDay?: number;
   locationCity?: string;
   locationAddress?: string;
-  location?: string; // Fallback
+  location?: string;
   images: Array<{ url: string; isPrimary?: boolean; orderIndex?: number }> | string[];
   description: string;
   features: string[];
   rating: number;
-  totalTrips: number;
+  totalTrips?: number;
+  totalReviews?: number;
   status?: string;
-  hostId?: {
+  hostId?: CarHost;
+  owner?: CarHost;
+}
+
+interface Review {
+  _id: string;
+  reviewerId?: {
     _id: string;
     firstName?: string;
     lastName?: string;
     email: string;
     profileImage?: string;
-    phone?: string;
+  };
+  rating: number;
+  reviewText?: string;
+  comment?: string;
+  createdAt: string;
+}
+
+interface Favorite {
+  _id: string;
+  carId?: {
+    _id: string;
   };
 }
 
@@ -93,21 +121,13 @@ export default function CarDetailPage() {
     comment: '',
   });
 
-  useEffect(() => {
-    if (params.id) {
-      fetchCarById(params.id as string);
-      fetchReviews(params.id as string);
-      checkFavorite();
-    }
-  }, [params.id, fetchCarById, fetchReviews, session?.user?.id]);
-
-  const checkFavorite = async () => {
+  const checkFavorite = useCallback(async () => {
     if (!session?.user?.id || !params.id) return;
     try {
       const res = await fetch('/api/favorites');
       const data = await res.json();
       if (res.ok && data.favorites) {
-        const favorite = data.favorites.find((f: any) => 
+        const favorite = data.favorites.find((f: Favorite) => 
           f.carId?._id === params.id || f.carId?._id?.toString() === params.id
         );
         setIsFavorite(!!favorite);
@@ -115,7 +135,15 @@ export default function CarDetailPage() {
     } catch (error) {
       console.error('Error checking favorite:', error);
     }
-  };
+  }, [session?.user?.id, params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchCarById(params.id as string);
+      fetchReviews(params.id as string);
+      checkFavorite();
+    }
+  }, [params.id, fetchCarById, fetchReviews, checkFavorite]);
 
   const handleToggleFavorite = async () => {
     if (!session) {
@@ -238,7 +266,7 @@ export default function CarDetailPage() {
             (1000 * 60 * 60 * 24)
         )
       : 0;
-  const dailyPrice = (car as any).dailyPrice || (car as any).pricePerDay || 0;
+  const dailyPrice = car?.dailyPrice || car?.pricePerDay || 0;
   const subtotal = totalDays * dailyPrice;
   const serviceFee = subtotal * 0.10;
   const insuranceFee = 150 * totalDays;
@@ -252,7 +280,7 @@ export default function CarDetailPage() {
         : ((car.images as unknown as Array<{ url: string }>).map(img => img.url)))
     : ['/placeholder.svg'];
 
-  const host = (car as any).hostId || (car as any).owner;
+  const host = car?.hostId || car?.owner;
   const hostName = host ? `${host.firstName || host.name || ''} ${host.lastName || ''}`.trim() || host.email : 'Host';
 
   return (
@@ -312,7 +340,7 @@ export default function CarDetailPage() {
                         <div className="mt-2 flex items-center gap-2">
                           <MapPin className="h-5 w-5 text-[#6C6C80]" />
                           <span className="text-base text-[#6C6C80]">
-                            {(car as any).locationCity || (car as any).locationAddress || (car as any).location || 'Location not specified'}
+                            {car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}
                           </span>
                         </div>
                       </div>
@@ -342,9 +370,9 @@ export default function CarDetailPage() {
                     <span className="text-xl font-bold text-[#1A1A2E]">
                       {car.rating > 0 ? car.rating.toFixed(1) : 'New'}
                     </span>
-                    {((car as any).totalTrips || (car as any).totalReviews || 0) > 0 && (
+                    {(car?.totalTrips || car?.totalReviews || 0) > 0 && (
                       <span className="text-sm text-[#6C6C80]">
-                        ({((car as any).totalTrips || (car as any).totalReviews || 0)} trips)
+                        ({(car?.totalTrips || car?.totalReviews || 0)} trips)
                       </span>
                     )}
                   </div>
@@ -358,7 +386,7 @@ export default function CarDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-[#6C6C80]">Seats</p>
-                      <p className="font-bold text-[#1A1A2E]">{(car as any).seatingCapacity || (car as any).seats || 0}</p>
+                      <p className="font-bold text-[#1A1A2E]">{car?.seatingCapacity || car?.seats || 0}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -432,7 +460,7 @@ export default function CarDetailPage() {
                         <MapPin className="h-5 w-5" />
                         Car Location
                       </h3>
-                      <p className="text-[#2D2D44] mb-2">{(car as any).locationCity || (car as any).locationAddress || (car as any).location || 'Location not specified'}</p>
+                      <p className="text-[#2D2D44] mb-2">{car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}</p>
                       <p className="text-sm text-[#6C6C80]">
                         The exact pickup location will be shared after booking confirmation.
                       </p>
@@ -486,7 +514,7 @@ export default function CarDetailPage() {
                               />
                             ))}
                           </div>
-                          <p className="text-sm text-[#6C6C80]">Based on {((car as any).totalTrips || (car as any).totalReviews || 0)} {((car as any).totalTrips || (car as any).totalReviews || 0) === 1 ? 'trip' : 'trips'}</p>
+                          <p className="text-sm text-[#6C6C80]">Based on {(car?.totalTrips || car?.totalReviews || 0)} {(car?.totalTrips || car?.totalReviews || 0) === 1 ? 'trip' : 'trips'}</p>
                         </div>
                       </div>
                       {session && (
@@ -502,7 +530,7 @@ export default function CarDetailPage() {
                     <Separator />
                     {reviews.length > 0 ? (
                       <div className="space-y-6">
-                        {reviews.map((review: any) => (
+                        {reviews.map((review: Review) => (
                           <div key={review._id} className="border-b border-[#E5E5EA] pb-6 last:border-0">
                             <div className="mb-3 flex items-center gap-3">
                               <div className="h-10 w-10 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-semibold">
@@ -801,7 +829,7 @@ export default function CarDetailPage() {
                   <span className="text-4xl font-bold text-[#1A1A2E]">₹{dailyPrice}</span>
                   <span className="text-[#6C6C80] text-lg">/day</span>
                 </div>
-                {((car as any).status !== 'active' && (car as any).status !== undefined) && (
+                {(car?.status !== 'active' && car?.status !== undefined) && (
                   <Badge className="mt-2 bg-[#FF4444] text-white w-fit">
                     Currently Unavailable
                   </Badge>
@@ -813,11 +841,11 @@ export default function CarDetailPage() {
                     <Button
                       size="lg"
                       className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold text-lg py-6 hover:shadow-lg transition-all duration-300"
-                      disabled={session?.user.id === host?._id || ((car as any).status !== 'active' && (car as any).status !== undefined)}
+                      disabled={session?.user.id === host?._id || (car?.status !== 'active' && car?.status !== undefined)}
                     >
                       {session?.user.id === host?._id
                         ? 'Your Car'
-                        : ((car as any).status !== 'active' && (car as any).status !== undefined)
+                        : (car?.status !== 'active' && car?.status !== undefined)
                         ? 'Currently Unavailable'
                         : 'Book Now'}
                     </Button>

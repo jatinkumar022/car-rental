@@ -45,7 +45,19 @@ interface Booking {
     fuelType: string;
     seatingCapacity: number;
   };
-  car?: any; // Fallback for old structure
+  car?: {
+    _id: string;
+    make: string;
+    model: string;
+    year: number;
+    images: Array<{ url: string }> | string[];
+    dailyPrice: number;
+    locationCity?: string;
+    locationAddress?: string;
+    transmission: string;
+    fuelType: string;
+    seatingCapacity: number;
+  };
   renterId?: {
     _id: string;
     firstName?: string;
@@ -54,7 +66,12 @@ interface Booking {
     profileImage?: string;
     phone?: string;
   };
-  renter?: any; // Fallback
+  renter?: {
+    name: string;
+    email: string;
+    avatar?: string;
+    phone?: string;
+  };
   hostId?: {
     _id: string;
     firstName?: string;
@@ -63,9 +80,17 @@ interface Booking {
     profileImage?: string;
     phone?: string;
   };
-  owner?: any; // Fallback
+  owner?: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    phone?: string;
+  };
   startDate: string;
   endDate: string;
+  pickupTime?: string;
+  returnTime?: string;
   totalDays: number;
   totalAmount: number;
   totalPrice?: number; // Fallback

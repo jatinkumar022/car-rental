@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Generate reset token (in production, store this in database with expiry)
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+    // const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now - unused in demo
 
     // In production, you would:
     // 1. Save resetToken and resetTokenExpiry to user document
@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
     // For demo purposes, we'll just log the token and return it in response
     // NEVER do this in production! Always send via email.
     if (user) {
-      console.log('Reset token for demo:', resetToken);
-      console.log('Reset link (demo):', `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`);
+      console.warn('DEMO: Reset token:', resetToken);
+      console.warn('DEMO: Reset link:', `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`);
       // In production: await User.findByIdAndUpdate(user._id, {
       //   resetToken,
       //   resetTokenExpiry,

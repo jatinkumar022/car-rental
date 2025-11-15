@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
@@ -15,11 +15,35 @@ import { PaymentModal } from '@/components/ui/payment-modal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+interface CheckoutCar {
+  _id: string;
+  make: string;
+  model: string;
+  year: number;
+  images: Array<{ url: string }> | string[];
+  dailyPrice?: number;
+  pricePerDay?: number;
+  locationCity?: string;
+  locationAddress?: string;
+  location?: string;
+  hostId?: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  };
+  owner?: {
+    _id: string;
+    name?: string;
+    email: string;
+  };
+}
+
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const [car, setCar] = useState<any>(null);
+  const { status } = useSession();
+  const [car, setCar] = useState<CheckoutCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [bookingData, setBookingData] = useState({
@@ -31,15 +55,7 @@ export default function CheckoutPage() {
 
   const carId = searchParams.get('carId');
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    } else if (status === 'authenticated' && carId) {
-      fetchCar();
-    }
-  }, [status, router, carId]);
-
-  const fetchCar = async () => {
+  const fetchCar = useCallback(async () => {
     try {
       const res = await fetch(`/api/cars/${carId}`);
       const data = await res.json();
@@ -56,7 +72,15 @@ export default function CheckoutPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [carId, router]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    } else if (status === 'authenticated' && carId) {
+      fetchCar();
+    }
+  }, [status, router, carId, fetchCar]);
 
   if (status === 'loading' || loading) {
     return (

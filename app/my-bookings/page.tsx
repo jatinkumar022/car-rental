@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
-import Loader from '@/components/Loader';
 import BookingCardSkeleton from '@/components/BookingCardSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -43,7 +42,16 @@ interface Booking {
     locationCity?: string;
     locationAddress?: string;
   };
-  car?: any; // Fallback
+  car?: {
+    _id: string;
+    make: string;
+    model: string;
+    images: Array<{ url: string }> | string[];
+    dailyPrice: number;
+    locationCity?: string;
+    locationAddress?: string;
+    location?: string;
+  };
   renterId?: {
     firstName?: string;
     lastName?: string;
@@ -51,11 +59,16 @@ interface Booking {
     profileImage?: string;
     phone?: string;
   };
-  renter?: any; // Fallback
+  renter?: {
+    name: string;
+    email: string;
+    avatar?: string;
+    phone?: string;
+  };
   startDate: string;
   endDate: string;
   totalDays: number;
-  totalAmount: number;
+  totalAmount?: number; // May be missing in some bookings
   totalPrice?: number; // Fallback
   status: string;
   paymentStatus: string;
@@ -353,7 +366,10 @@ export default function MyBookingsPage() {
   if (!session) return null;
 
   const currentBookings = activeTab === 'renter' ? renterBookings : ownerBookings;
-  const filtered = filteredBookings(currentBookings);
+  const filtered = filteredBookings(currentBookings.map(b => ({
+    ...b,
+    totalAmount: b.totalAmount ?? b.totalPrice ?? 0
+  })));
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] py-8">
@@ -508,9 +524,15 @@ export default function MyBookingsPage() {
 
           {session.user.role === 'owner' && (
             <TabsContent value="owner" className="space-y-6">
-              {filteredBookings(ownerBookings).length > 0 ? (
+              {filteredBookings(ownerBookings.map(b => ({
+                ...b,
+                totalAmount: b.totalAmount ?? b.totalPrice ?? 0
+              }))).length > 0 ? (
                 <div className="space-y-4">
-                  {filteredBookings(ownerBookings).map((booking) => renderBookingCard(booking, true))}
+                  {filteredBookings(ownerBookings.map(b => ({
+                    ...b,
+                    totalAmount: b.totalAmount ?? b.totalPrice ?? 0
+                  }))).map((booking) => renderBookingCard(booking, true))}
                 </div>
               ) : (
                 <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">

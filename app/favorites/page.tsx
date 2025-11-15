@@ -11,7 +11,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Loader from '@/components/Loader';
 import { toast } from 'sonner';
-import CarCard from '@/components/CarCard';
 
 interface Favorite {
   _id: string;
@@ -101,7 +100,7 @@ export default function FavoritesPage() {
             My Favorites
           </h1>
           <p className="mt-2 text-base text-[#6C6C80] sm:text-lg">
-            Cars you've saved for later
+            Cars you&apos;ve saved for later
           </p>
         </div>
 

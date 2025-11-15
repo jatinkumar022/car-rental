@@ -39,19 +39,19 @@ interface Car {
   model: string;
   year: number;
   images: Array<{ url: string }> | string[];
-  dailyPrice: number;
+  dailyPrice?: number;
   pricePerDay?: number; // Fallback
   locationCity?: string;
   locationAddress?: string;
   location?: string; // Fallback
   rating: number;
-  totalTrips: number;
+  totalTrips?: number;
   totalReviews?: number; // Fallback
-  seatingCapacity: number;
+  seatingCapacity?: number;
   seats?: number; // Fallback
   fuelType: string;
   transmission: string;
-  status: string;
+  status?: 'pending' | 'active' | 'inactive' | 'suspended' | string;
   available?: boolean; // Fallback
   owner?: string;
   type?: string;
@@ -134,18 +134,21 @@ export default function MyCarsPage() {
       return;
     }
 
-    const success = await createCar({
+    const carData = {
       ...carForm,
       year: parseInt(carForm.year) || new Date().getFullYear(),
-      seatingCapacity: parseInt(carForm.seats) || 5,
+      seats: parseInt(carForm.seats) || 5, // Use 'seats' for store compatibility
       features: carForm.features
         .split(',')
         .map((f) => f.trim())
         .filter(Boolean),
-      dailyPrice: parseFloat(carForm.pricePerDay),
-      locationCity: carForm.location,
-      status: 'pending',
-    });
+      pricePerDay: parseFloat(carForm.pricePerDay), // Use pricePerDay for store
+      location: carForm.location, // Use location for store
+      available: true, // Use available for store
+    };
+    // Exclude images from carData (store expects string[] but we have mixed types)
+    const { images: _images, ...carDataWithoutImages } = carData as Partial<Car>;
+    const success = await createCar(carDataWithoutImages as Parameters<typeof createCar>[0]);
 
     if (success) {
       setAddCarOpen(false);
@@ -181,7 +184,8 @@ export default function MyCarsPage() {
   };
 
   const handleToggleAvailability = async (carId: string, currentStatus: boolean) => {
-    const success = await updateCar(carId, { status: currentStatus ? 'inactive' : 'active' });
+    const updateData = { available: !currentStatus };
+    const success = await updateCar(carId, updateData as Parameters<typeof updateCar>[1]);
     if (success && session?.user?.id) {
       fetchCars({ ownerId: session.user.id });
       fetchStats();
@@ -198,8 +202,8 @@ export default function MyCarsPage() {
     
     const matchesFilter = 
       filterStatus === 'all' ||
-      (filterStatus === 'available' && car.status === 'active') ||
-      (filterStatus === 'unavailable' && car.status !== 'active');
+      (filterStatus === 'available' && (car.status === 'active' || car.available === true)) ||
+      (filterStatus === 'unavailable' && (car.status !== 'active' && car.available !== true));
 
     return matchesSearch && matchesFilter;
   });
@@ -564,7 +568,7 @@ export default function MyCarsPage() {
               const carImages = Array.isArray(car.images) && car.images.length > 0
                 ? (typeof car.images[0] === 'string'
                     ? car.images as string[]
-                    : (car.images as Array<{ url: string }>).map(img => img.url))
+                    : (car.images as unknown as Array<{ url: string }>).map((img: { url: string }) => img.url))
                 : ['/placeholder.svg'];
 
               return (
@@ -579,8 +583,8 @@ export default function MyCarsPage() {
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
                       <div className="absolute top-2 right-2">
-                        <Badge className={car.status === 'active' ? 'bg-[#00D09C] text-white' : 'bg-[#FF4444] text-white'}>
-                          {car.status === 'active' ? 'Available' : 'Unavailable'}
+                        <Badge className={(car.status === 'active' || car.available === true) ? 'bg-[#00D09C] text-white' : 'bg-[#FF4444] text-white'}>
+                          {(car.status === 'active' || car.available === true) ? 'Available' : 'Unavailable'}
                         </Badge>
                       </div>
                     </div>
@@ -612,10 +616,10 @@ export default function MyCarsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleToggleAvailability(car._id, car.status === 'active')}
+                        onClick={() => handleToggleAvailability(car._id, car.status === 'active' || car.available === true)}
                         className="flex-1 border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]"
                       >
-                        {car.status === 'active' ? 'Mark Unavailable' : 'Mark Available'}
+                        {(car.status === 'active' || car.available === true) ? 'Mark Unavailable' : 'Mark Available'}
                       </Button>
                       <Button
                         size="sm"
