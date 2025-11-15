@@ -327,7 +327,7 @@ export default function CarDetailPage() {
               </div>
               {carImages.length > 1 && (
                 <div className="p-4 bg-white">
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-32 overflow-y-auto">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 flex-wrap">
                     {carImages.map((img, i) => (
                       <div
                         key={i}
