@@ -174,12 +174,12 @@ export default function BookingConfirmationPage() {
             <div className="flex flex-col sm:flex-row gap-6 mb-6">
               {car && typeof car === 'object' && 'make' in car && (
                 <>
-                  <div className="relative h-48 w-full sm:w-64 rounded-lg overflow-hidden">
+                  <div className="relative h-48 w-full sm:w-64 rounded-lg overflow-hidden bg-[#F7F7FA]">
                     <Image
                       src={carImages[0] || '/placeholder.svg'}
                       alt={`${car.make || ''} ${car.model || ''}`}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                       sizes="(max-width: 640px) 100vw, 256px"
                     />
                   </div>
@@ -196,7 +196,7 @@ export default function BookingConfirmationPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <IndianRupee className="h-4 w-4" />
-                        <span className="font-semibold text-[#1A1A2E]">₹{booking.dailyRate || car.dailyPrice || 0} per day</span>
+                        <span className="font-medium text-[#1A1A2E]">₹{booking.dailyRate || car.dailyPrice || 0} per day</span>
                       </div>
                     </div>
                   </div>
@@ -320,7 +320,7 @@ export default function BookingConfirmationPage() {
                   <Calendar className="h-5 w-5 text-[#00D09C]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#1A1A2E] mb-1">Mark Your Calendar</h3>
+                  <h3 className="font-medium text-[#1A1A2E] mb-1 text-base">Mark Your Calendar</h3>
                   <p className="text-sm text-[#6C6C80]">
                     Make sure you&apos;re available on {format(new Date(booking.startDate), 'MMMM dd, yyyy')} for pickup.
                   </p>
@@ -331,7 +331,7 @@ export default function BookingConfirmationPage() {
                   <Car className="h-5 w-5 text-[#00D09C]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#1A1A2E] mb-1">Prepare for Pickup</h3>
+                  <h3 className="font-medium text-[#1A1A2E] mb-1 text-base">Prepare for Pickup</h3>
                   <p className="text-sm text-[#6C6C80]">
                     You&apos;ll receive detailed pickup instructions and contact information via email.
                   </p>
@@ -342,7 +342,7 @@ export default function BookingConfirmationPage() {
                   <CheckCircle className="h-5 w-5 text-[#00D09C]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#1A1A2E] mb-1">Stay Updated</h3>
+                  <h3 className="font-medium text-[#1A1A2E] mb-1 text-base">Stay Updated</h3>
                   <p className="text-sm text-[#6C6C80]">
                     Check your booking status and communicate with the host through the booking details page.
                   </p>

@@ -197,12 +197,12 @@ export default function MyBookingsPage() {
     return (
       <Card key={booking._id} className="overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-shadow">
         <div className="flex flex-col sm:flex-row">
-          <Link href={`/cars/${car?._id || ''}`} className="relative h-48 w-full sm:h-auto sm:w-48 shrink-0">
+          <Link href={`/cars/${car?._id || ''}`} className="relative h-48 w-full sm:h-auto sm:w-48 shrink-0 bg-[#F7F7FA]">
             <Image
               src={carImages[0] || '/placeholder.svg'}
               alt={`${car?.make || ''} ${car?.model || ''}`}
               fill
-              className="object-cover"
+              className="object-contain"
               sizes="(max-width: 640px) 100vw, 192px"
             />
           </Link>
@@ -211,13 +211,13 @@ export default function MyBookingsPage() {
               <div className="flex-1">
                 <div className="mb-3">
                   <Link href={`/cars/${car?._id || ''}`}>
-                    <h3 className="text-xl font-semibold text-[#1A1A2E] hover:text-[#00D09C] transition">
+                    <h3 className="text-xl font-semibold text-[#1A1A2E] hover:text-[#00D09C] transition line-clamp-2 break-words">
                       {car?.make} {car?.model}
                     </h3>
                   </Link>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-[#6C6C80]">
-                    <MapPin className="h-4 w-4" />
-                    <span>{car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}</span>
+                  <div className="flex items-center gap-2 mt-1 text-sm text-[#6C6C80] min-w-0">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}</span>
                   </div>
                 </div>
 
@@ -232,9 +232,9 @@ export default function MyBookingsPage() {
                 )}
 
                 <div className="space-y-2 text-sm text-[#6C6C80] mb-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Calendar className="h-4 w-4 shrink-0" />
+                    <span className="truncate">
                       {format(new Date(booking.startDate), 'MMM dd, yyyy')} -{' '}
                       {format(new Date(booking.endDate), 'MMM dd, yyyy')}
                     </span>
@@ -399,7 +399,7 @@ export default function MyBookingsPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">

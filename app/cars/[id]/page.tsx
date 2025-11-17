@@ -17,7 +17,6 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  Calendar,
   Heart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,15 +33,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import CarCard from '@/components/CarCard';
 import { useCarStore } from '@/stores/useCarStore';
 import { useBookingStore } from '@/stores/useBookingStore';
 import { useReviewStore } from '@/stores/useReviewStore';
 import { toast } from 'sonner';
+import { DatePickerSingle } from '@/components/ui/date-picker-single';
 
 interface CarHost {
   _id: string;
@@ -116,11 +116,27 @@ export default function CarDetailPage() {
     startDate: '',
     endDate: '',
   });
+  const [bookedDates, setBookedDates] = useState<string[]>([]);
+  const [isMoreThanOneDay, setIsMoreThanOneDay] = useState(false);
   const [reviewData, setReviewData] = useState({
     rating: 5,
     comment: '',
   });
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  const resetBookingForm = useCallback(() => {
+    setBookingData({
+      startDate: '',
+      endDate: '',
+    });
+    setIsMoreThanOneDay(false);
+  }, []);
+
+  useEffect(() => {
+    if (!bookingOpen) {
+      resetBookingForm();
+    }
+  }, [bookingOpen, resetBookingForm]);
 
   const checkFavorite = useCallback(async () => {
     if (!session?.user?.id || !params.id) return;
@@ -138,13 +154,27 @@ export default function CarDetailPage() {
     }
   }, [session?.user?.id, params.id]);
 
+  const fetchBookedDates = useCallback(async () => {
+    if (!params.id) return;
+    try {
+      const res = await fetch(`/api/cars/${params.id}/booked-dates`);
+      const data = await res.json();
+      if (res.ok && data.bookedDates) {
+        setBookedDates(data.bookedDates);
+      }
+    } catch (error) {
+      console.error('Error fetching booked dates:', error);
+    }
+  }, [params.id]);
+
   useEffect(() => {
     if (params.id) {
       fetchCarById(params.id as string);
       fetchReviews(params.id as string);
       checkFavorite();
+      fetchBookedDates();
     }
-  }, [params.id, fetchCarById, fetchReviews, checkFavorite]);
+  }, [params.id, fetchCarById, fetchReviews, checkFavorite, fetchBookedDates]);
 
   const handleToggleFavorite = async () => {
     if (!session) {
@@ -202,14 +232,53 @@ export default function CarDetailPage() {
     setSelectedImageIndex(0);
   }, [car?._id]);
 
+  const handleStartDateChange = (date: Date | undefined) => {
+    setBookingData((prev) => {
+      const nextStart = date ? format(date, 'yyyy-MM-dd') : '';
+      const shouldClearEnd =
+        !date ||
+        !isMoreThanOneDay ||
+        (date && prev.endDate && date > new Date(prev.endDate));
+
+      return {
+        ...prev,
+        startDate: nextStart,
+        endDate: shouldClearEnd ? '' : prev.endDate,
+      };
+    });
+  };
+
+  const handleEndDateChange = (date: Date | undefined) => {
+    setBookingData({
+      ...bookingData,
+      endDate: date ? format(date, 'yyyy-MM-dd') : '',
+    });
+  };
+
+  const handleMoreThanOneDayChange = (checked: boolean) => {
+    setIsMoreThanOneDay(checked);
+    if (!checked) {
+      // Clear end date when unchecking
+      setBookingData({
+        ...bookingData,
+        endDate: '',
+      });
+    }
+  };
+
   const handleBooking = () => {
     if (!session) {
       router.push('/auth/login');
       return;
     }
 
-    if (!bookingData.startDate || !bookingData.endDate) {
-      toast.error('Please select both start and end dates');
+    if (!bookingData.startDate) {
+      toast.error('Please select a start date');
+      return;
+    }
+
+    if (isMoreThanOneDay && !bookingData.endDate) {
+      toast.error('Please select an end date');
       return;
     }
 
@@ -266,12 +335,14 @@ export default function CarDetailPage() {
   }
 
   const totalDays =
-    bookingData.startDate && bookingData.endDate
-      ? Math.ceil(
-          (new Date(bookingData.endDate).getTime() -
-            new Date(bookingData.startDate).getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
+    bookingData.startDate
+      ? bookingData.endDate
+        ? Math.ceil(
+            (new Date(bookingData.endDate).getTime() -
+              new Date(bookingData.startDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ) + 1
+        : 1 // Single day booking
       : 0;
   const dailyPrice = car?.dailyPrice || car?.pricePerDay || 0;
   const subtotal = totalDays * dailyPrice;
@@ -315,26 +386,27 @@ export default function CarDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Image Gallery */}
-            <Card className="mb-6 overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
-              <div className="relative h-64 w-full sm:h-96 lg:h-[500px]">
+            <Card className="mb-4 sm:mb-6 overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+              <div className="relative w-full aspect-video min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px]">
                 <Image
                   src={carImages[selectedImageIndex] || carImages[0] || '/placeholder.svg'}
                   alt={`${car.make} ${car.model}`}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   sizes="(max-width: 768px) 100vw, 66vw"
+                  priority
                 />
               </div>
               {carImages.length > 1 && (
-                <div className="p-4 bg-white">
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 flex-wrap">
+                <div className="p-2 sm:p-3 md:p-4 bg-white">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 sm:gap-2 flex-wrap">
                     {carImages.map((img, i) => (
                       <div
                         key={i}
                         onClick={() => setSelectedImageIndex(i)}
-                        className={`relative h-20 w-full rounded-lg overflow-hidden cursor-pointer transition-all ${
+                        className={`relative h-14 sm:h-16 md:h-20 w-full rounded-md sm:rounded-lg overflow-hidden cursor-pointer transition-all ${
                           selectedImageIndex === i
-                            ? 'ring-2 ring-[#00D09C] ring-offset-2 opacity-100 scale-105'
+                            ? 'ring-2 ring-[#00D09C] ring-offset-1 sm:ring-offset-2 opacity-100 scale-105'
                             : 'hover:opacity-80 opacity-70 hover:scale-105'
                         }`}
                       >
@@ -342,7 +414,7 @@ export default function CarDetailPage() {
                           src={img}
                           alt={`${car.make} ${car.model} ${i + 1}`}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                           sizes="(max-width: 768px) 20vw, 12vw"
                         />
                       </div>
@@ -352,19 +424,176 @@ export default function CarDetailPage() {
               )}
             </Card>
 
+            {/* Booking Card - Mobile Only (shows after images) */}
+            <div className="lg:hidden mb-4 sm:mb-6">
+              <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+                <CardHeader className="p-4 sm:p-6">
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1A1A2E]">₹{dailyPrice}</span>
+                    <span className="text-[#6C6C80] text-sm sm:text-base md:text-lg">/day</span>
+                  </div>
+                  {(car?.status !== 'active' && car?.status !== undefined) && (
+                    <Badge className="mt-2 bg-[#FF4444] text-white w-fit">
+                      Currently Unavailable
+                    </Badge>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="lg"
+                        className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base md:text-lg py-3 sm:py-4 md:py-5 hover:shadow-lg transition-all duration-300"
+                        disabled={session?.user.id === host?._id || (car?.status !== 'active' && car?.status !== undefined)}
+                      >
+                        {session?.user.id === host?._id
+                          ? 'Your Car'
+                          : (car?.status !== 'active' && car?.status !== undefined)
+                          ? 'Currently Unavailable'
+                          : 'Book Now'}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md max-w-[95vw]">
+                      <DialogHeader>
+                        <DialogTitle className="text-lg sm:text-xl md:text-2xl">Book {car.make} {car.model}</DialogTitle>
+                        <DialogDescription className="text-sm">
+                          Select your rental dates
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <DatePickerSingle
+                            label="Start Date"
+                            date={bookingData.startDate ? new Date(bookingData.startDate) : undefined}
+                            onDateChange={handleStartDateChange}
+                            disabledDates={bookedDates}
+                            minDate={new Date()}
+                            placeholder="Select start date"
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2 py-2">
+                          <Checkbox
+                            id="more-than-one-day-mobile"
+                            checked={isMoreThanOneDay}
+                            onCheckedChange={handleMoreThanOneDayChange}
+                          />
+                          <label
+                            htmlFor="more-than-one-day-mobile"
+                            className="text-sm font-medium text-[#1A1A2E] cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            More than one day
+                          </label>
+                        </div>
+                        {isMoreThanOneDay && (
+                          <div>
+                        <DatePickerSingle
+                          label="End Date"
+                          date={bookingData.endDate ? new Date(bookingData.endDate) : undefined}
+                          onDateChange={handleEndDateChange}
+                          disabledDates={bookedDates}
+                          minDate={bookingData.startDate ? new Date(bookingData.startDate) : new Date()}
+                          placeholder="Select end date"
+                          className="w-full"
+                          highlightedDates={
+                            bookingData.startDate ? [new Date(bookingData.startDate)] : []
+                          }
+                          lockedDates={
+                            bookingData.startDate ? [new Date(bookingData.startDate)] : []
+                          }
+                        />
+                          </div>
+                        )}
+                        {bookedDates.length > 0 && (
+                          <p className="text-xs text-[#6C6C80]">
+                            Booked dates are shown in red and cannot be selected
+                          </p>
+                        )}
+                        {totalDays > 0 && (
+                          <div className="rounded-lg sm:rounded-xl bg-[#E6FFF9] p-3 sm:p-4 border-2 border-[#00D09C]">
+                            <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm mb-2 sm:mb-3">
+                              <div className="flex justify-between items-center gap-2">
+                                <span className="text-[#6C6C80] truncate">Subtotal ({totalDays} days):</span>
+                                <span className="font-semibold text-[#1A1A2E] shrink-0">₹{subtotal.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between items-center gap-2">
+                                <span className="text-[#6C6C80] truncate">Service Fee (10%):</span>
+                                <span className="font-semibold text-[#1A1A2E] shrink-0">₹{serviceFee.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between items-center gap-2">
+                                <span className="text-[#6C6C80] truncate">Insurance:</span>
+                                <span className="font-semibold text-[#1A1A2E] shrink-0">₹{insuranceFee.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between items-center gap-2">
+                                <span className="text-[#6C6C80] truncate">GST (18%):</span>
+                                <span className="font-semibold text-[#1A1A2E] shrink-0">₹{gst.toFixed(2)}</span>
+                              </div>
+                            </div>
+                            <div className="flex justify-between text-base sm:text-lg font-bold text-[#1A1A2E] pt-2 sm:pt-3 border-t border-[#00D09C]">
+                              <span>Total:</span>
+                              <span>₹{totalPrice.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          onClick={handleBooking}
+                          className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base py-3 sm:py-4 md:py-5"
+                          disabled={!bookingData.startDate || (isMoreThanOneDay && !bookingData.endDate)}
+                        >
+                          Confirm Booking
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Separator className="my-4 sm:my-6" />
+
+                  {host && (
+                  <div>
+                    <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-[#1A1A2E]">Host</h3>
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shrink-0">
+                        {hostName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm sm:text-base font-semibold text-[#1A1A2E] break-words">{hostName}</p>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-[#6C6C80]">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 shrink-0" />
+                          <span>Verified Host</span>
+                        </div>
+                      </div>
+                    </div>
+                    {host.phone && (
+                      <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#6C6C80] min-w-0">
+                        <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                        <span className="truncate">{host.phone}</span>
+                      </div>
+                    )}
+                    <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#6C6C80] min-w-0">
+                      <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <span className="truncate break-all">{host.email}</span>
+                    </div>
+                  </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Car Details */}
             <Card className="mb-6 shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
               <CardHeader>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <CardTitle className="text-3xl sm:text-4xl font-bold text-[#1A1A2E]">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#1A1A2E] line-clamp-2 break-words">
                           {car.make} {car.model} {car.year}
                         </CardTitle>
-                        <div className="mt-2 flex items-center gap-2">
-                          <MapPin className="h-5 w-5 text-[#6C6C80]" />
-                          <span className="text-base text-[#6C6C80]">
+                        <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 sm:gap-2 min-w-0">
+                          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#6C6C80] shrink-0" />
+                          <span className="text-sm sm:text-base text-[#6C6C80] truncate">
                             {car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}
                           </span>
                         </div>
@@ -372,17 +601,17 @@ export default function CarDetailPage() {
                       {session && (
                         <Button
                           variant="outline"
-                          size="icon"
+                          size="icon-sm"
                           onClick={handleToggleFavorite}
                           disabled={favoriteLoading}
-                          className={`h-12 w-12 rounded-full border-2 ${
+                          className={`h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 rounded-full border-2 shrink-0 ${
                             isFavorite
                               ? 'border-[#FF4444] bg-[#FFE5E5] text-[#FF4444] hover:bg-[#FFE5E5]'
                               : 'border-[#E5E5EA] hover:border-[#00D09C] hover:bg-[#E6FFF9]'
                           }`}
                         >
                           <Heart
-                            className={`h-6 w-6 ${
+                            className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 ${
                               isFavorite ? 'fill-[#FF4444] text-[#FF4444]' : 'text-[#6C6C80]'
                             }`}
                           />
@@ -390,13 +619,13 @@ export default function CarDetailPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-[#E6FFF9] px-4 py-2 rounded-xl">
-                    <Star className="h-6 w-6 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xl font-bold text-[#1A1A2E]">
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-[#E6FFF9] px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl">
+                    <Star className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 fill-yellow-400 text-yellow-400 shrink-0" />
+                    <span className="text-base sm:text-lg md:text-xl font-bold text-[#1A1A2E]">
                       {car.rating > 0 ? car.rating.toFixed(1) : 'New'}
                     </span>
                     {(car?.totalTrips || car?.totalReviews || 0) > 0 && (
-                      <span className="text-sm text-[#6C6C80]">
+                      <span className="text-xs sm:text-sm text-[#6C6C80]">
                         ({(car?.totalTrips || car?.totalReviews || 0)} trips)
                       </span>
                     )}
@@ -404,48 +633,48 @@ export default function CarDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4 bg-[#E6FFF9] p-4 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <Users className="h-5 w-5 text-[#00D09C]" />
+                <div className="mb-4 sm:mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-4 bg-[#E6FFF9] p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl">
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-white rounded-md sm:rounded-lg flex items-center justify-center shrink-0">
+                      <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-[#00D09C]" />
                     </div>
-                    <div>
-                      <p className="text-xs text-[#6C6C80]">Seats</p>
-                      <p className="font-bold text-[#1A1A2E]">{car?.seatingCapacity || car?.seats || 0}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <Settings className="h-5 w-5 text-[#00D09C]" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-[#6C6C80]">Transmission</p>
-                      <p className="font-bold text-[#1A1A2E] capitalize">{car.transmission}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs text-[#6C6C80]">Seats</p>
+                      <p className="text-sm sm:text-base font-bold text-[#1A1A2E] truncate">{car?.seatingCapacity || car?.seats || 0}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <Fuel className="h-5 w-5 text-[#00D09C]" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-white rounded-md sm:rounded-lg flex items-center justify-center shrink-0">
+                      <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-[#00D09C]" />
                     </div>
-                    <div>
-                      <p className="text-xs text-[#6C6C80]">Fuel</p>
-                      <p className="font-bold text-[#1A1A2E] capitalize">{car.fuelType}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs text-[#6C6C80]">Transmission</p>
+                      <p className="text-sm sm:text-base font-bold text-[#1A1A2E] capitalize truncate">{car.transmission}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <Car className="h-5 w-5 text-[#00D09C]" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-white rounded-md sm:rounded-lg flex items-center justify-center shrink-0">
+                      <Fuel className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-[#00D09C]" />
                     </div>
-                    <div>
-                      <p className="text-xs text-[#6C6C80]">Year</p>
-                      <p className="font-bold text-[#1A1A2E]">{car.year}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs text-[#6C6C80]">Fuel</p>
+                      <p className="text-sm sm:text-base font-bold text-[#1A1A2E] capitalize truncate">{car.fuelType}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-white rounded-md sm:rounded-lg flex items-center justify-center shrink-0">
+                      <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-[#00D09C]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs text-[#6C6C80]">Year</p>
+                      <p className="text-sm sm:text-base font-bold text-[#1A1A2E] truncate">{car.year}</p>
                     </div>
                   </div>
                 </div>
-                <Separator className="my-6" />
+                <Separator className="my-4 sm:my-6" />
                 <div>
-                  <h3 className="mb-3 text-lg font-semibold text-[#1A1A2E]">Description</h3>
-                  <p className="text-base text-[#6C6C80] leading-relaxed">{car.description}</p>
+                  <h3 className="mb-2 sm:mb-3 text-base sm:text-lg font-semibold text-[#1A1A2E]">Description</h3>
+                  <p className="text-sm sm:text-base text-[#6C6C80] leading-relaxed break-words">{car.description}</p>
                 </div>
                 {car.features.length > 0 && (
                   <>
@@ -454,8 +683,8 @@ export default function CarDetailPage() {
                       <h3 className="mb-3 text-lg font-semibold text-[#1A1A2E]">Features</h3>
                       <div className="flex flex-wrap gap-2">
                         {car.features.map((feature, i) => (
-                          <Badge key={i} variant="outline" className="px-3 py-1 text-sm border-[#00D09C] text-[#00D09C]">
-                            {feature}
+                          <Badge key={i} variant="outline" className="px-3 py-1 text-sm border-[#00D09C] text-[#00D09C] max-w-full">
+                            <span className="truncate block">{feature}</span>
                           </Badge>
                         ))}
                       </div>
@@ -467,56 +696,58 @@ export default function CarDetailPage() {
 
             {/* Detailed Information Tabs */}
             <Card className="shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold">Car Information</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-xl sm:text-2xl font-bold">Car Information</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="flex w-full gap-2 mb-6 overflow-x-auto scrollbar-hide">
-                    <TabsTrigger value="location" className="min-w-[120px] whitespace-nowrap shrink-0">Location</TabsTrigger>
-                    <TabsTrigger value="reviews" className="min-w-[120px] whitespace-nowrap shrink-0">Reviews ({reviews.length})</TabsTrigger>
-                    <TabsTrigger value="features" className="min-w-[120px] whitespace-nowrap shrink-0">Features</TabsTrigger>
-                    <TabsTrigger value="benefits" className="min-w-[120px] whitespace-nowrap shrink-0">Benefits</TabsTrigger>
-                    <TabsTrigger value="faqs" className="min-w-[120px] whitespace-nowrap shrink-0">FAQs</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="location" className="space-y-4">
+                  <div className="overflow-x-auto -mx-6 px-6 mb-6 scrollbar-hide">
+                    <TabsList className="inline-flex w-auto gap-2 min-w-full sm:min-w-0">
+                      <TabsTrigger value="location" className="min-w-[120px] whitespace-nowrap shrink-0">Location</TabsTrigger>
+                      <TabsTrigger value="reviews" className="min-w-[120px] whitespace-nowrap shrink-0">Reviews ({reviews.length})</TabsTrigger>
+                      <TabsTrigger value="features" className="min-w-[120px] whitespace-nowrap shrink-0">Features</TabsTrigger>
+                      <TabsTrigger value="benefits" className="min-w-[120px] whitespace-nowrap shrink-0">Benefits</TabsTrigger>
+                      <TabsTrigger value="faqs" className="min-w-[120px] whitespace-nowrap shrink-0">FAQs</TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <TabsContent value="location" className="space-y-3 sm:space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <MapPin className="h-5 w-5" />
+                      <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
                         Car Location
                       </h3>
-                      <p className="text-[#2D2D44] mb-2">{car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}</p>
-                      <p className="text-sm text-[#6C6C80]">
+                      <p className="text-sm sm:text-base text-[#2D2D44] mb-1.5 sm:mb-2 break-words">{car?.locationCity || car?.locationAddress || car?.location || 'Location not specified'}</p>
+                      <p className="text-xs sm:text-sm text-[#6C6C80] break-words">
                         The exact pickup location will be shared after booking confirmation.
                       </p>
                     </div>
                     <Separator />
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 text-[#1A1A2E]">Host Information</h3>
+                      <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-[#1A1A2E]">Host Information</h3>
                       {host && (
                         <>
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="h-12 w-12 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-bold text-lg">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shrink-0">
                               {hostName.charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <p className="font-semibold text-[#1A1A2E]">Hosted by {hostName}</p>
-                              <div className="flex items-center gap-2 text-sm text-[#6C6C80] mt-1">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm sm:text-base font-semibold text-[#1A1A2E] break-words">Hosted by {hostName}</p>
+                              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#6C6C80] mt-1">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 shrink-0" />
                                 <span>Verified Host</span>
                               </div>
                             </div>
                           </div>
                           {host && host.phone && (
-                            <div className="flex items-center gap-2 text-sm text-[#6C6C80] mb-2">
-                              <Phone className="h-4 w-4" />
-                              <span>{host.phone}</span>
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#6C6C80] mb-1.5 sm:mb-2 min-w-0">
+                              <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                              <span className="truncate">{host.phone}</span>
                             </div>
                           )}
                           {host && (
-                            <div className="flex items-center gap-2 text-sm text-[#6C6C80]">
-                              <Mail className="h-4 w-4" />
-                              <span>{host.email}</span>
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#6C6C80] min-w-0">
+                              <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                              <span className="truncate break-all">{host.email}</span>
                             </div>
                           )}
                         </>
@@ -524,16 +755,16 @@ export default function CarDetailPage() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="reviews" className="space-y-6">
-                    <div className="mb-6">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="text-4xl font-bold">{car.rating > 0 ? car.rating.toFixed(1) : 'New'}</div>
+                  <TabsContent value="reviews" className="space-y-4 sm:space-y-6">
+                    <div className="mb-4 sm:mb-6">
+                      <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+                        <div className="text-2xl sm:text-3xl md:text-4xl font-bold">{car.rating > 0 ? car.rating.toFixed(1) : 'New'}</div>
                         <div>
-                          <div className="flex items-center gap-1 mb-1">
+                          <div className="flex items-center gap-0.5 sm:gap-1 mb-1">
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
-                                className={`h-5 w-5 ${
+                                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 ${
                                   i < Math.floor(car.rating)
                                     ? 'fill-yellow-400 text-yellow-400'
                                     : 'text-gray-300'
@@ -541,13 +772,14 @@ export default function CarDetailPage() {
                               />
                             ))}
                           </div>
-                          <p className="text-sm text-[#6C6C80]">Based on {(car?.totalTrips || car?.totalReviews || 0)} {(car?.totalTrips || car?.totalReviews || 0) === 1 ? 'trip' : 'trips'}</p>
+                          <p className="text-xs sm:text-sm text-[#6C6C80]">Based on {(car?.totalTrips || car?.totalReviews || 0)} {(car?.totalTrips || car?.totalReviews || 0) === 1 ? 'trip' : 'trips'}</p>
                         </div>
                       </div>
                       {session && (
                         <Button
                           onClick={() => setReviewOpen(true)}
                           variant="outline"
+                          size="sm"
                           className="w-full sm:w-auto border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]"
                         >
                           Write a Review
@@ -556,30 +788,30 @@ export default function CarDetailPage() {
                     </div>
                     <Separator />
                     {reviews.length > 0 ? (
-                      <div className="space-y-6">
+                      <div className="space-y-4 sm:space-y-6">
                         {reviews.map((review: Review) => (
-                          <div key={review._id} className="border-b border-[#E5E5EA] pb-6 last:border-0">
-                            <div className="mb-3 flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-semibold">
+                          <div key={review._id} className="border-b border-[#E5E5EA] pb-4 sm:pb-6 last:border-0">
+                            <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3">
+                              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-semibold text-sm sm:text-base shrink-0">
                                 {review.reviewerId?.firstName?.charAt(0)?.toUpperCase() || 
                                  review.reviewerId?.email?.charAt(0)?.toUpperCase() || 'U'}
                               </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold text-[#1A1A2E]">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                                  <span className="text-sm sm:text-base font-semibold text-[#1A1A2E] truncate">
                                     {review.reviewerId?.firstName && review.reviewerId?.lastName
                                       ? `${review.reviewerId.firstName} ${review.reviewerId.lastName}`
                                       : review.reviewerId?.email || 'User'}
                                   </span>
-                                  <span className="text-xs text-[#6C6C80]">
+                                  <span className="text-xs text-[#6C6C80] shrink-0">
                                     {format(new Date(review.createdAt), 'MMM dd, yyyy')}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-0.5 sm:gap-1">
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
-                                      className={`h-4 w-4 ${
+                                      className={`h-3 w-3 sm:h-4 sm:w-4 ${
                                         i < review.rating
                                           ? 'fill-yellow-400 text-yellow-400'
                                           : 'text-gray-300'
@@ -589,7 +821,7 @@ export default function CarDetailPage() {
                                 </div>
                               </div>
                             </div>
-                            <p className="text-base text-[#2D2D44] leading-relaxed">{review.reviewText || review.comment}</p>
+                            <p className="text-sm sm:text-base text-[#2D2D44] leading-relaxed break-words">{review.reviewText || review.comment}</p>
                           </div>
                         ))}
                       </div>
@@ -848,13 +1080,13 @@ export default function CarDetailPage() {
             </Card>
           </div>
 
-          {/* Sidebar */}
-          <div>
-            <Card className="sticky top-24 shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
-              <CardHeader>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-[#1A1A2E]">₹{dailyPrice}</span>
-                  <span className="text-[#6C6C80] text-lg">/day</span>
+          {/* Sidebar - Desktop Only */}
+          <div className="hidden lg:block">
+            <Card className="sticky top-20 sm:top-24 shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1A1A2E]">₹{dailyPrice}</span>
+                  <span className="text-[#6C6C80] text-sm sm:text-base md:text-lg">/day</span>
                 </div>
                 {(car?.status !== 'active' && car?.status !== undefined) && (
                   <Badge className="mt-2 bg-[#FF4444] text-white w-fit">
@@ -867,7 +1099,7 @@ export default function CarDetailPage() {
                   <DialogTrigger asChild>
                     <Button
                       size="lg"
-                      className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold text-lg py-6 hover:shadow-lg transition-all duration-300"
+                      className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base md:text-lg py-3 sm:py-4 md:py-5 hover:shadow-lg transition-all duration-300"
                       disabled={session?.user.id === host?._id || (car?.status !== 'active' && car?.status !== undefined)}
                     >
                       {session?.user.id === host?._id
@@ -877,65 +1109,83 @@ export default function CarDetailPage() {
                         : 'Book Now'}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="sm:max-w-md max-w-[95vw]">
                     <DialogHeader>
-                      <DialogTitle className="text-2xl">Book {car.make} {car.model}</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-lg sm:text-xl md:text-2xl">Book {car.make} {car.model}</DialogTitle>
+                      <DialogDescription className="text-sm">
                         Select your rental dates
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-medium">Start Date</Label>
-                        <div className="flex items-center space-x-2 border border-gray-300 rounded-lg px-4 py-3 mt-2">
-                          <Calendar className="w-5 h-5 text-gray-400" />
-                          <Input
-                            type="date"
-                            value={bookingData.startDate}
-                            onChange={(e) =>
-                              setBookingData({ ...bookingData, startDate: e.target.value })
+                        <DatePickerSingle
+                          label="Start Date"
+                          date={bookingData.startDate ? new Date(bookingData.startDate) : undefined}
+                          onDateChange={handleStartDateChange}
+                          disabledDates={bookedDates}
+                          minDate={new Date()}
+                          placeholder="Select start date"
+                          className="w-full"
+                        />
+                      </div>
+                        <div className="flex items-center space-x-2 py-2">
+                          <Checkbox
+                            id="more-than-one-day-desktop"
+                            checked={isMoreThanOneDay}
+                            onCheckedChange={handleMoreThanOneDayChange}
+                          />
+                          <label
+                            htmlFor="more-than-one-day-desktop"
+                            className="text-sm font-medium text-[#1A1A2E] cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            More than one day
+                          </label>
+                        </div>
+                      {isMoreThanOneDay && (
+                        <div>
+                          <DatePickerSingle
+                            label="End Date"
+                            date={bookingData.endDate ? new Date(bookingData.endDate) : undefined}
+                            onDateChange={handleEndDateChange}
+                            disabledDates={bookedDates}
+                            minDate={bookingData.startDate ? new Date(bookingData.startDate) : new Date()}
+                            placeholder="Select end date"
+                            className="w-full"
+                            highlightedDates={
+                              bookingData.startDate ? [new Date(bookingData.startDate)] : []
                             }
-                            min={format(new Date(), 'yyyy-MM-dd')}
-                            className="border-0 outline-none focus-visible:ring-0"
+                            lockedDates={
+                              bookingData.startDate ? [new Date(bookingData.startDate)] : []
+                            }
                           />
                         </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">End Date</Label>
-                        <div className="flex items-center space-x-2 border border-gray-300 rounded-lg px-4 py-3 mt-2">
-                          <Calendar className="w-5 h-5 text-gray-400" />
-                          <Input
-                            type="date"
-                            value={bookingData.endDate}
-                            onChange={(e) =>
-                              setBookingData({ ...bookingData, endDate: e.target.value })
-                            }
-                            min={bookingData.startDate || format(new Date(), 'yyyy-MM-dd')}
-                            className="border-0 outline-none focus-visible:ring-0"
-                          />
-                        </div>
-                      </div>
+                      )}
+                      {bookedDates.length > 0 && (
+                        <p className="text-xs text-[#6C6C80]">
+                          Booked dates are shown in red and cannot be selected
+                        </p>
+                      )}
                       {totalDays > 0 && (
-                        <div className="rounded-xl bg-[#E6FFF9] p-4 border-2 border-[#00D09C]">
-                          <div className="space-y-2 text-sm mb-3">
-                            <div className="flex justify-between">
-                              <span className="text-[#6C6C80]">Subtotal ({totalDays} days):</span>
-                              <span className="font-semibold text-[#1A1A2E]">₹{subtotal.toFixed(2)}</span>
+                        <div className="rounded-lg sm:rounded-xl bg-[#E6FFF9] p-3 sm:p-4 border-2 border-[#00D09C]">
+                          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm mb-2 sm:mb-3">
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="text-[#6C6C80] truncate">Subtotal ({totalDays} days):</span>
+                              <span className="font-semibold text-[#1A1A2E] shrink-0">₹{subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-[#6C6C80]">Service Fee (10%):</span>
-                              <span className="font-semibold text-[#1A1A2E]">₹{serviceFee.toFixed(2)}</span>
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="text-[#6C6C80] truncate">Service Fee (10%):</span>
+                              <span className="font-semibold text-[#1A1A2E] shrink-0">₹{serviceFee.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-[#6C6C80]">Insurance:</span>
-                              <span className="font-semibold text-[#1A1A2E]">₹{insuranceFee.toFixed(2)}</span>
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="text-[#6C6C80] truncate">Insurance:</span>
+                              <span className="font-semibold text-[#1A1A2E] shrink-0">₹{insuranceFee.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-[#6C6C80]">GST (18%):</span>
-                              <span className="font-semibold text-[#1A1A2E]">₹{gst.toFixed(2)}</span>
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="text-[#6C6C80] truncate">GST (18%):</span>
+                              <span className="font-semibold text-[#1A1A2E] shrink-0">₹{gst.toFixed(2)}</span>
                             </div>
                           </div>
-                          <div className="flex justify-between text-lg font-bold text-[#1A1A2E] pt-3 border-t border-[#00D09C]">
+                          <div className="flex justify-between text-base sm:text-lg font-bold text-[#1A1A2E] pt-2 sm:pt-3 border-t border-[#00D09C]">
                             <span>Total:</span>
                             <span>₹{totalPrice.toFixed(2)}</span>
                           </div>
@@ -945,8 +1195,8 @@ export default function CarDetailPage() {
                     <DialogFooter>
                       <Button
                         onClick={handleBooking}
-                        className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold py-6"
-                        disabled={!bookingData.startDate || !bookingData.endDate}
+                        className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base py-3 sm:py-4 md:py-5"
+                        disabled={!bookingData.startDate || (isMoreThanOneDay && !bookingData.endDate)}
                       >
                         Confirm Booking
                       </Button>
@@ -958,28 +1208,28 @@ export default function CarDetailPage() {
 
                 {host && (
                 <div>
-                  <h3 className="mb-4 text-lg font-semibold text-[#1A1A2E]">Host</h3>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-bold text-lg">
+                  <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-[#1A1A2E]">Host</h3>
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-[#00D09C] flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shrink-0">
                       {hostName.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <p className="font-semibold text-[#1A1A2E]">{hostName}</p>
-                      <div className="flex items-center gap-2 text-xs text-[#6C6C80]">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm sm:text-base font-semibold text-[#1A1A2E] break-words">{hostName}</p>
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-[#6C6C80]">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 shrink-0" />
                         <span>Verified Host</span>
                       </div>
                     </div>
                   </div>
                   {host.phone && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-[#6C6C80]">
-                      <Phone className="h-4 w-4" />
-                      <span>{host.phone}</span>
+                    <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#6C6C80] min-w-0">
+                      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <span className="truncate">{host.phone}</span>
                     </div>
                   )}
-                  <div className="mt-2 flex items-center gap-2 text-sm text-[#6C6C80]">
-                    <Mail className="h-4 w-4" />
-                    <span>{host.email}</span>
+                  <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#6C6C80] min-w-0">
+                    <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate break-all">{host.email}</span>
                   </div>
                 </div>
                 )}

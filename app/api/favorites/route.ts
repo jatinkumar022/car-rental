@@ -13,7 +13,7 @@ export async function GET(_request: NextRequest) {
     await dbConnect();
 
     const favorites = await Favorite.find({ userId: session.user.id })
-      .populate('carId', 'make model year images dailyPrice locationCity status')
+      .populate('carId', 'make model year images dailyPrice locationCity locationAddress status transmission fuelType seatingCapacity rating totalTrips totalReviews')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({ favorites }, { status: 200 });
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     });
 
     const populatedFavorite = await Favorite.findById(favorite._id)
-      .populate('carId', 'make model year images dailyPrice locationCity status');
+      .populate('carId', 'make model year images dailyPrice locationCity locationAddress status transmission fuelType seatingCapacity rating totalTrips totalReviews');
 
     return NextResponse.json({ favorite: populatedFavorite }, { status: 201 });
   } catch (error) {

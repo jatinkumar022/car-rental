@@ -5,15 +5,17 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Calendar, MapPin, Car, ArrowLeft, CreditCard, Loader2 } from 'lucide-react';
+import { MapPin, Car, ArrowLeft, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { PaymentModal } from '@/components/ui/payment-modal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { DatePickerSingle } from '@/components/ui/date-picker-single';
+import { Checkbox } from '@/components/ui/checkbox';
+import { TimePicker } from '@/components/ui/time-picker';
 
 interface CheckoutCar {
   _id: string;
@@ -50,12 +52,18 @@ function CheckoutForm() {
   const [car, setCar] = useState<CheckoutCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const initialStartDate = searchParams.get('startDate') || '';
+  const initialEndDate = searchParams.get('endDate') || '';
   const [bookingData, setBookingData] = useState({
-    startDate: searchParams.get('startDate') || '',
-    endDate: searchParams.get('endDate') || '',
+    startDate: initialStartDate,
+    endDate: initialEndDate,
     pickupTime: '',
     returnTime: '',
   });
+  const [isMoreThanOneDay, setIsMoreThanOneDay] = useState(
+    Boolean(initialStartDate && initialEndDate && initialEndDate !== initialStartDate)
+  );
+  const [bookedDates, setBookedDates] = useState<string[]>([]);
 
   const carId = searchParams.get('carId');
 
@@ -86,6 +94,22 @@ function CheckoutForm() {
     }
   }, [status, router, carId, fetchCar]);
 
+  useEffect(() => {
+    const fetchBookedDates = async () => {
+      if (!carId) return;
+      try {
+        const res = await fetch(`/api/cars/${carId}/booked-dates`);
+        const data = await res.json();
+        if (res.ok && data.bookedDates) {
+          setBookedDates(data.bookedDates);
+        }
+      } catch (error) {
+        console.error('Error fetching booked dates:', error);
+      }
+    };
+    fetchBookedDates();
+  }, [carId]);
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
@@ -110,10 +134,45 @@ function CheckoutForm() {
     );
   }
 
+  const handleStartDateChange = (date: Date | undefined) => {
+    setBookingData((prev) => {
+      const nextStart = date ? format(date, 'yyyy-MM-dd') : '';
+      const shouldClearEnd =
+        !date ||
+        !isMoreThanOneDay ||
+        (date && prev.endDate && date > new Date(prev.endDate));
+
+      return {
+        ...prev,
+        startDate: nextStart,
+        endDate: shouldClearEnd ? '' : prev.endDate,
+      };
+    });
+  };
+
+  const handleEndDateChange = (date: Date | undefined) => {
+    setBookingData((prev) => ({
+      ...prev,
+      endDate: date ? format(date, 'yyyy-MM-dd') : '',
+    }));
+  };
+
+  const handleMoreThanOneDayChange = (checked: boolean) => {
+    setIsMoreThanOneDay(checked);
+    if (!checked) {
+      setBookingData((prev) => ({
+        ...prev,
+        endDate: '',
+      }));
+    }
+  };
+
   const startDate = bookingData.startDate ? new Date(bookingData.startDate) : null;
-  const endDate = bookingData.endDate ? new Date(bookingData.endDate) : null;
-  const totalDays = startDate && endDate
-    ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  const endDate = bookingData.endDate ? new Date(bookingData.endDate) : (startDate ? new Date(startDate) : null);
+  const totalDays = startDate
+    ? endDate && endDate.getTime() !== startDate.getTime()
+      ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      : 1 // Single day booking
     : 0;
 
   const dailyPrice = car.dailyPrice || 0;
@@ -130,8 +189,8 @@ function CheckoutForm() {
     : ['/placeholder.svg'];
 
   const handleProceedToPayment = () => {
-    if (!bookingData.startDate || !bookingData.endDate) {
-      toast.error('Please select both start and end dates');
+    if (!bookingData.startDate) {
+      toast.error('Please select a start date');
       return;
     }
     setPaymentModalOpen(true);
@@ -154,7 +213,7 @@ function CheckoutForm() {
         body: JSON.stringify({
           carId: car._id,
           startDate: bookingData.startDate,
-          endDate: bookingData.endDate,
+          endDate: bookingData.endDate || bookingData.startDate, // Use startDate as endDate for single day bookings
           pickupTime: bookingData.pickupTime || '10:00',
           returnTime: bookingData.returnTime || '10:00',
           totalDays,
@@ -218,12 +277,12 @@ function CheckoutForm() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4">
-                  <div className="relative h-32 w-48 rounded-lg overflow-hidden">
+                  <div className="relative h-32 w-48 rounded-lg overflow-hidden bg-[#F7F7FA]">
                     <Image
                       src={carImages[0] || '/placeholder.svg'}
                       alt={`${car.make} ${car.model}`}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                       sizes="192px"
                     />
                   </div>
@@ -258,55 +317,62 @@ function CheckoutForm() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="startDate" className="text-[#2D2D44]">Start Date</Label>
-                    <div className="flex items-center space-x-2 border border-[#E5E5EA] rounded-lg px-4 py-3 mt-2">
-                      <Calendar className="w-5 h-5 text-[#6C6C80]" />
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={bookingData.startDate}
-                        onChange={(e) => setBookingData({ ...bookingData, startDate: e.target.value })}
-                        min={format(new Date(), 'yyyy-MM-dd')}
-                        className="border-0 outline-none focus-visible:ring-0"
-                      />
-                    </div>
+                    <DatePickerSingle
+                      label="Start Date"
+                      date={bookingData.startDate ? new Date(bookingData.startDate) : undefined}
+                      onDateChange={handleStartDateChange}
+                      disabledDates={bookedDates}
+                      minDate={new Date()}
+                      placeholder="Select start date"
+                      className="w-full"
+                    />
                   </div>
-                  <div>
-                    <Label htmlFor="endDate" className="text-[#2D2D44]">End Date</Label>
-                    <div className="flex items-center space-x-2 border border-[#E5E5EA] rounded-lg px-4 py-3 mt-2">
-                      <Calendar className="w-5 h-5 text-[#6C6C80]" />
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={bookingData.endDate}
-                        onChange={(e) => setBookingData({ ...bookingData, endDate: e.target.value })}
-                        min={bookingData.startDate || format(new Date(), 'yyyy-MM-dd')}
-                        className="border-0 outline-none focus-visible:ring-0"
-                      />
-                    </div>
+                  <div className="flex items-center gap-2 mt-2 sm:mt-7">
+                    <Checkbox
+                      id="checkout-more-than-one-day"
+                      checked={isMoreThanOneDay}
+                      onCheckedChange={(checked) => handleMoreThanOneDayChange(!!checked)}
+                    />
+                    <Label
+                      htmlFor="checkout-more-than-one-day"
+                      className="text-sm font-medium text-[#1A1A2E]"
+                    >
+                      More than one day
+                    </Label>
                   </div>
                 </div>
+                {isMoreThanOneDay && (
+                  <div>
+                    <DatePickerSingle
+                      label="End Date"
+                      date={bookingData.endDate ? new Date(bookingData.endDate) : undefined}
+                      onDateChange={handleEndDateChange}
+                      disabledDates={bookedDates}
+                      minDate={bookingData.startDate ? new Date(bookingData.startDate) : new Date()}
+                      placeholder="Select end date"
+                      className="w-full"
+                      highlightedDates={
+                        bookingData.startDate ? [new Date(bookingData.startDate)] : []
+                      }
+                      lockedDates={
+                        bookingData.startDate ? [new Date(bookingData.startDate)] : []
+                      }
+                    />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="pickupTime" className="text-[#2D2D44]">Pickup Time (Optional)</Label>
-                    <Input
-                      id="pickupTime"
-                      type="time"
-                      value={bookingData.pickupTime}
-                      onChange={(e) => setBookingData({ ...bookingData, pickupTime: e.target.value })}
-                      className="mt-2"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="returnTime" className="text-[#2D2D44]">Return Time (Optional)</Label>
-                    <Input
-                      id="returnTime"
-                      type="time"
-                      value={bookingData.returnTime}
-                      onChange={(e) => setBookingData({ ...bookingData, returnTime: e.target.value })}
-                      className="mt-2"
-                    />
-                  </div>
+                  <TimePicker
+                    label="Pickup Time (Optional)"
+                    value={bookingData.pickupTime}
+                    onChange={(value) => setBookingData({ ...bookingData, pickupTime: value })}
+                    placeholder="Select pickup time"
+                  />
+                  <TimePicker
+                    label="Return Time (Optional)"
+                    value={bookingData.returnTime}
+                    onChange={(value) => setBookingData({ ...bookingData, returnTime: value })}
+                    placeholder="Select return time"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -351,7 +417,11 @@ function CheckoutForm() {
                 </div>
                 <Button
                   onClick={handleProceedToPayment}
-                  disabled={!bookingData.startDate || !bookingData.endDate || totalDays <= 0}
+                  disabled={
+                    !bookingData.startDate ||
+                    totalDays <= 0 ||
+                    (isMoreThanOneDay && !bookingData.endDate)
+                  }
                   className="w-full mt-4 bg-[#00D09C] hover:bg-[#00B386] text-white"
                 >
                   <CreditCard className="mr-2 h-4 w-4" />

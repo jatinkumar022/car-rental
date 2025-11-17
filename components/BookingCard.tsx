@@ -55,38 +55,38 @@ export default function BookingCard({
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-col sm:flex-row">
-        <div className="relative h-48 w-full sm:h-auto sm:w-48">
+        <div className="relative h-48 w-full sm:h-auto sm:w-48 bg-[#F7F7FA]">
           <Image
             src={booking.car.images[0] || '/placeholder.svg'}
             alt={`${booking.car.make} ${booking.car.model}`}
             fill
-            className="object-cover"
+            className="object-contain"
             sizes="(max-width: 640px) 100vw, 192px"
           />
         </div>
-        <CardContent className="flex-1 p-4 sm:p-6">
+        <CardContent className="flex-1 p-4 sm:p-6 min-w-0">
           <div className="mb-3">
-            <h3 className="text-lg font-semibold text-gray-900 sm:text-xl">
+            <h3 className="text-lg font-semibold text-gray-900 sm:text-xl line-clamp-2 break-words">
               {booking.car.make} {booking.car.model}
             </h3>
             {showRenter && booking.renter && (
               <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
-                <User className="h-4 w-4" />
-                <span>{booking.renter.name}</span>
+                <User className="h-4 w-4 shrink-0" />
+                <span className="truncate">{booking.renter.name}</span>
               </div>
             )}
           </div>
           <div className="space-y-2 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>
+            <div className="flex items-center gap-2 min-w-0">
+              <Calendar className="h-4 w-4 shrink-0" />
+              <span className="truncate">
                 {format(new Date(booking.startDate), 'MMM dd, yyyy')} -{' '}
                 {format(new Date(booking.endDate), 'MMM dd, yyyy')}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <IndianRupee className="h-4 w-4" />
-              <span>
+            <div className="flex items-center gap-2 min-w-0">
+              <IndianRupee className="h-4 w-4 shrink-0" />
+              <span className="truncate">
                 ₹{booking.totalPrice} ({booking.totalDays} days)
               </span>
             </div>

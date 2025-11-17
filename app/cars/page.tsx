@@ -59,43 +59,44 @@ function CarsPageContent() {
   const hasActiveFilters = Object.values(localFilters).some((v) => v);
 
   return (
-    <div className="min-h-screen bg-[#F7F7FA] py-8">
+    <div className="min-h-screen bg-[#F7F7FA] py-4 sm:py-6 md:py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#1A1A2E] sm:text-4xl mb-2">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1A1A2E] mb-1.5 sm:mb-2">
             Browse Cars
           </h1>
-          <p className="text-[#6C6C80]">
+          <p className="text-sm sm:text-base text-[#6C6C80]">
             Find your perfect ride from our collection
           </p>
         </div>
 
         {/* Enhanced Search and Filter Bar */}
-        <div className="mb-6 space-y-4">
-          <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-6">
-            <div className="flex flex-col gap-4">
+        <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+          <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-4 sm:p-5 md:p-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute left-2 sm:left-3 top-1/2 h-4 w-4 sm:h-5 sm:w-5 -translate-y-1/2 text-gray-400" />
                   <Input
                     type="text"
                     placeholder="Search by make, model, or location..."
                     value={localFilters.search}
                     onChange={(e) => updateFilter('search', e.target.value)}
-                    className="pl-10 h-12 text-base"
+                    className="pl-8 sm:pl-10 h-9 sm:h-10 md:h-12 text-sm sm:text-base"
                   />
                 </div>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setShowFilters(!showFilters)}
-                  className="sm:w-auto h-12 border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]"
+                  className="sm:w-auto h-9 sm:h-10 md:h-12 border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]"
                 >
-                  <Filter className="mr-2 h-4 w-4" />
+                  <Filter className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Filters
                 </Button>
                 {hasActiveFilters && (
-                  <Button variant="ghost" onClick={clearFilters} className="sm:w-auto h-12 text-[#6C6C80] hover:text-[#00D09C]">
-                    <X className="mr-2 h-4 w-4" />
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="sm:w-auto h-9 sm:h-10 md:h-12 text-[#6C6C80] hover:text-[#00D09C]">
+                    <X className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Clear
                   </Button>
                 )}
@@ -103,10 +104,10 @@ function CarsPageContent() {
 
               {/* Filter Panel */}
               {showFilters && (
-                <div className="pt-4 border-t">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="pt-3 sm:pt-4 border-t">
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-[#2D2D44]">Type</label>
+                      <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-medium text-[#2D2D44]">Type</label>
                       <Select
                         value={localFilters.type}
                         onValueChange={(value) => updateFilter('type', value)}

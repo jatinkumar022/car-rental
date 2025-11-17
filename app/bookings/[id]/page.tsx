@@ -311,12 +311,12 @@ export default function BookingDetailsPage() {
                 <div className="flex flex-col sm:flex-row gap-6">
                   {car && typeof car === 'object' && 'make' in car ? (
                     <>
-                      <div className="relative h-48 w-full sm:w-64 rounded-lg overflow-hidden">
+                      <div className="relative h-48 w-full sm:w-64 rounded-lg overflow-hidden bg-[#F7F7FA]">
                         <Image
                           src={carImages[0] || '/placeholder.svg'}
                           alt={`${car.make || ''} ${car.model || ''}`}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                           sizes="(max-width: 640px) 100vw, 256px"
                         />
                       </div>

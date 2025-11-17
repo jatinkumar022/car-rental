@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IPayment extends Document {
+  booking: mongoose.Types.ObjectId;
   bookingId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   amount: number;
@@ -12,6 +13,11 @@ export interface IPayment extends Document {
 
 const PaymentSchema: Schema = new Schema(
   {
+    booking: {
+      type: Schema.Types.ObjectId,
+      ref: 'Booking',
+      required: true,
+    },
     bookingId: {
       type: Schema.Types.ObjectId,
       ref: 'Booking',
@@ -47,7 +53,19 @@ const PaymentSchema: Schema = new Schema(
   }
 );
 
-// Database indexes for better query performance
+// Keep booking and bookingId in sync (supports legacy indexes)
+PaymentSchema.pre('save', function (next) {
+  if (!this.booking && this.bookingId) {
+    this.booking = this.bookingId as mongoose.Types.ObjectId;
+  }
+  if (!this.bookingId && this.booking) {
+    this.bookingId = this.booking as mongoose.Types.ObjectId;
+  }
+  next();
+});
+
+// Database indexes for better performance (allow multiple payments per booking in demo)
+PaymentSchema.index({ booking: 1 });
 PaymentSchema.index({ bookingId: 1 });
 PaymentSchema.index({ userId: 1 });
 PaymentSchema.index({ status: 1 });
