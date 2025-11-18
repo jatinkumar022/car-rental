@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Car, Calendar, IndianRupee, TrendingUp, Eye, Trash2, Search, Filter, X } from 'lucide-react';
+import { Plus, Car, Calendar, IndianRupee, TrendingUp, Eye, Trash2, Search, Filter, X, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -53,7 +53,16 @@ interface Car {
   transmission: string;
   status?: 'pending' | 'active' | 'inactive' | 'suspended' | string;
   available?: boolean; // Fallback
-  owner?: string;
+  owner?: string | {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    email: string;
+    profileImage?: string;
+    avatar?: string;
+    phone?: string;
+  };
   type?: string;
   description: string;
   features: string[];
@@ -75,6 +84,7 @@ export default function HostCarsSection({
   const { cars, loading, stats, fetchCars, createCar, deleteCar, updateCar, uploadCarImage, fetchStats, setFilters } = useCarStore();
   const { fetchOwnerBookings } = useBookingStore();
   const [addCarOpen, setAddCarOpen] = useState(false);
+  const [editingCarId, setEditingCarId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [carForm, setCarForm] = useState({
@@ -150,6 +160,58 @@ export default function HostCarsSection({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleEditCar = (car: Car) => {
+    // Extract image URLs from car.images (can be array of strings or array of objects)
+    const carImages = Array.isArray(car.images) && car.images.length > 0
+      ? (typeof car.images[0] === 'string'
+        ? car.images as string[]
+        : (car.images as unknown as Array<{ url: string }>).map(img => img.url))
+      : [];
+
+    // Normalize type value to match SelectItem values exactly
+    // Handle both string and potential object types
+    const carTypeValue = typeof car.type === 'string' ? car.type.trim() : '';
+    const validTypes = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Van'];
+    const normalizedType = carTypeValue && validTypes.includes(carTypeValue) ? carTypeValue : '';
+
+    setCarForm({
+      make: car.make || '',
+      model: car.model || '',
+      year: car.year?.toString() || new Date().getFullYear().toString(),
+      type: normalizedType,
+      transmission: car.transmission || 'automatic',
+      fuelType: car.fuelType || 'petrol',
+      seats: (car.seatingCapacity || car.seats || 5).toString(),
+      pricePerDay: (car.dailyPrice || car.pricePerDay || 0).toString(),
+      location: car.locationCity || car.locationAddress || car.location || '',
+      description: car.description || '',
+      features: car.features?.join(', ') || '',
+      images: carImages,
+    });
+    setEditingCarId(car._id);
+    setAddCarOpen(true);
+    setErrors({});
+  };
+
+  const resetForm = () => {
+    setCarForm({
+      make: '',
+      model: '',
+      year: new Date().getFullYear().toString(),
+      type: '',
+      transmission: 'automatic',
+      fuelType: 'petrol',
+      seats: '5',
+      pricePerDay: '',
+      location: '',
+      description: '',
+      features: '',
+      images: [],
+    });
+    setEditingCarId(null);
+    setErrors({});
+  };
+
   const handleAddCar = async () => {
     if (!validateForm()) {
       return;
@@ -188,25 +250,18 @@ export default function HostCarsSection({
       images: carForm.images, // Include images - API will convert to proper format
     };
 
-    const success = await createCar(carData as Parameters<typeof createCar>[0]);
+    let success = false;
+    if (editingCarId) {
+      // Update existing car
+      success = await updateCar(editingCarId, carData as Parameters<typeof updateCar>[1]);
+    } else {
+      // Create new car
+      success = await createCar(carData as Parameters<typeof createCar>[0]);
+    }
 
     if (success) {
       setAddCarOpen(false);
-      setErrors({});
-      setCarForm({
-        make: '',
-        model: '',
-        year: new Date().getFullYear().toString(),
-        type: '',
-        transmission: 'automatic',
-        fuelType: 'petrol',
-        seats: '5',
-        pricePerDay: '',
-        location: '',
-        description: '',
-        features: '',
-        images: [],
-      });
+      resetForm();
       if (session?.user?.id) {
         fetchCars({ ownerId: session.user.id });
         fetchStats();
@@ -275,7 +330,15 @@ export default function HostCarsSection({
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1A1A2E]">{heading}</h2>
             <p className="mt-2 text-sm sm:text-base text-[#6C6C80]">{description}</p>
           </div>
-          <Dialog open={addCarOpen} onOpenChange={setAddCarOpen}>
+          <Dialog
+            open={addCarOpen}
+            onOpenChange={(open) => {
+              setAddCarOpen(open);
+              if (!open) {
+                resetForm();
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button className="bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
                 <Plus className="mr-2 h-4 w-4" />
@@ -284,9 +347,11 @@ export default function HostCarsSection({
             </DialogTrigger>
             <DialogContent className="sm:max-w-2xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">Add New Car</DialogTitle>
+                <DialogTitle className="text-2xl font-bold">
+                  {editingCarId ? 'Edit Car' : 'Add New Car'}
+                </DialogTitle>
                 <DialogDescription className="text-base">
-                  List your car for rent on Carido
+                  {editingCarId ? 'Update your car listing' : 'List your car for rent on Carido'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -347,10 +412,12 @@ export default function HostCarsSection({
                   <div>
                     <Label>Type *</Label>
                     <Select
-                      value={carForm.type}
-                      onValueChange={(value) =>
-                        setCarForm({ ...carForm, type: value })
-                      }
+                      key={`type-select-${editingCarId || 'new'}-${carForm.type}`}
+                      value={carForm.type && carForm.type.trim() !== '' ? carForm.type : undefined}
+                      onValueChange={(value) => {
+                        setCarForm({ ...carForm, type: value });
+                        if (errors.type) setErrors({ ...errors, type: '' });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -364,6 +431,7 @@ export default function HostCarsSection({
                         <SelectItem value="Van">Van</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type}</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -523,7 +591,7 @@ export default function HostCarsSection({
                   onClick={handleAddCar}
                   className="w-full bg-[#00D09C] hover:bg-[#00B386] text-white rounded-xl font-semibold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  Add Car
+                  {editingCarId ? 'Update Car' : 'Add Car'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -616,7 +684,7 @@ export default function HostCarsSection({
       {/* Cars Grid */}
       {filteredCars.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredCars.map((car) => {
+          {filteredCars.map((car: Car) => {
             const carImages = Array.isArray(car.images) && car.images.length > 0
               ? (typeof car.images[0] === 'string'
                 ? car.images as string[]
@@ -664,23 +732,37 @@ export default function HostCarsSection({
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-col">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleToggleAvailability(car._id, car.status === 'active' || car.available === true)}
-                      className="flex-1 border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9]"
+                      className="flex-1 border-[#00D09C] text-[#00D09C] hover:bg-[#E6FFF9] py-1.5"
                     >
                       {(car.status === 'active' || car.available === true) ? 'Mark Unavailable' : 'Mark Available'}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteCar(car._id)}
-                      className="border-[#FF4444] text-[#FF4444] hover:bg-[#FFE5E5]"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditCar(car)}
+                        className="flex-1 border-[#2196F3] text-[#2196F3] hover:bg-[#E6F3FF] w-1/2 py-2"
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteCar(car._id)}
+                        className="border-[#FF4444] text-[#FF4444] hover:bg-[#FFE5E5] w-1/2 py-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

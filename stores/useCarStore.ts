@@ -279,12 +279,13 @@ export const useCarStore = create<CarState>((set, get) => ({
         .filter((b: { status: string; paymentStatus: string }) => 
           b.status === 'completed' && b.paymentStatus === 'paid'
         )
-        .reduce((sum: number, b: { totalPrice: number }) => sum + b.totalPrice, 0);
+        .reduce((sum: number, b: { totalAmount?: number; totalPrice?: number }) => 
+          sum + (b.totalAmount || b.totalPrice || 0), 0);
 
       set({
         stats: {
           totalCars: fetchedCars.length,
-          availableCars: fetchedCars.filter((c: Car) => c.available).length,
+          availableCars: fetchedCars.filter((c: Car) => c.status === 'active').length,
           totalEarnings,
           totalBookings: bookings.length,
         },

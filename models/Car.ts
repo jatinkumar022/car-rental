@@ -11,6 +11,7 @@ export interface ICar extends Omit<Document, 'model'> {
   make: string;
   model: string; // Car model name (e.g., "Camry")
   year: number;
+  type?: string; // Car type (e.g., "Sedan", "SUV", "Hatchback")
   registrationNumber?: string;
   color?: string;
   fuelType: 'petrol' | 'diesel' | 'electric' | 'cng';
@@ -57,6 +58,10 @@ const CarSchema: Schema = new Schema(
       required: [true, 'Please provide car year'],
       min: [1900, 'Year must be valid'],
       max: [new Date().getFullYear() + 1, 'Year cannot be in the future'],
+    },
+    type: {
+      type: String,
+      trim: true,
     },
     registrationNumber: {
       type: String,
